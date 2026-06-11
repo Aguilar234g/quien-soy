@@ -1,9 +1,10 @@
 /* ¿Quién Soy? — servidor multijugador (Express + Socket.IO)
-   Salas en memoria, lógica de juego autoritativa en el servidor. */
+   Salas en memoria con persistencia a disco. */
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 const path = require("path");
+const fs = require("fs");
 
 const app = express();
 const server = http.createServer(app);
@@ -15,6 +16,38 @@ const PUNTOS = [50, 40, 30, 20, 10];
 const salas = new Map();          // code -> sala
 const conexiones = new Map();     // socket.id -> { code, playerId, esHost }
 const pantallasEsperando = new Set(); // socket.ids de pantallas sin sala
+
+/* ================= PERSISTENCIA ================= */
+const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "data");
+const ESTADO_FILE = path.join(DATA_DIR, "salas.json");
+
+function guardarEstado(){
+  try{
+    if(!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+    const datos = [];
+    for(const [code, sala] of salas){
+      datos.push({ code, hostKey: sala.hostKey, est: sala.est, mazo: sala.mazo, creada: sala.creada });
+    }
+    fs.writeFileSync(ESTADO_FILE, JSON.stringify(datos), "utf8");
+  }catch(e){ console.error("Error guardando estado:", e.message); }
+}
+
+function cargarEstado(){
+  try{
+    if(!fs.existsSync(ESTADO_FILE)) return;
+    const datos = JSON.parse(fs.readFileSync(ESTADO_FILE, "utf8"));
+    const ahora = Date.now();
+    for(const d of datos){
+      if(ahora - d.creada > 24 * 3600 * 1000) continue;
+      if(d.est.fase === "final") continue;
+      const sala = { code: d.code, hostKey: d.hostKey, hostSid: null, est: d.est, mazo: d.mazo, creada: d.creada };
+      salas.set(d.code, sala);
+    }
+    if(salas.size > 0) console.log("Restauradas " + salas.size + " sala(s) activa(s).");
+  }catch(e){ console.error("Error cargando estado:", e.message); }
+}
+
+cargarEstado();
 
 function genCodigo(){
   const L = "ABCDEFGHJKLMNPQRSTUVWXYZ";
@@ -102,6 +135,7 @@ io.on("connection", socket => {
       socket.join(code);
       ack && ack({ code, hostKey });
       publicar(sala);
+      guardarEstado();
     }catch(e){ ack && ack({ error: "Error al crear la sala." }); }
   });
 
@@ -171,6 +205,7 @@ io.on("connection", socket => {
     socket.join(sala.code);
     ack && ack({ id: jugador.id, estado: sala.est });
     publicar(sala);
+    guardarEstado();
   });
 
   socket.on("buzz", () => {
@@ -198,6 +233,7 @@ io.on("connection", socket => {
     if(a === "empezar" && e.fase === "lobby" && Object.keys(e.jugadores).length > 0){
       e.fase = "jugando";
       nuevaRonda(sala, 0);
+      guardarEstado();
       return;
     }
     if(e.fase !== "jugando" || !r) return;
@@ -209,6 +245,7 @@ io.on("connection", socket => {
       if(e.modo === "equipos") e.puntosEquipo[b.e] += pts;
       else e.jugadores[b.id].p += pts;
       cerrarRonda(sala, { n: b.n, e: b.e, pts });
+      guardarEstado();
     }
     if(a === "incorrecto" && r.buzz && !r.resuelto){
       const b = r.buzz;
@@ -217,6 +254,7 @@ io.on("connection", socket => {
       else { e.jugadores[b.id].p -= castigo; r.bloq.push(b.id); }
       r.buzz = null;
       publicar(sala);
+      guardarEstado();
     }
     if(a === "revelar" && !r.resuelto && !r.buzz) cerrarRonda(sala, null);
 
@@ -228,23 +266,39 @@ io.on("connection", socket => {
         e.ronda = null;
         publicar(sala);
       }
+      guardarEstado();
     }
     if(a === "cerrar"){
       io.to(sala.code).emit("sala_cerrada");
       salas.delete(sala.code);
+      guardarEstado();
     }
   });
 
   socket.on("disconnect", () => { conexiones.delete(socket.id); pantallasEsperando.delete(socket.id); });
 });
 
-// limpieza de salas de más de 4 horas
+// limpieza de salas de más de 24 horas
 setInterval(() => {
   const ahora = Date.now();
+  let borradas = 0;
   for(const [code, sala] of salas){
-    if(ahora - sala.creada > 4 * 3600 * 1000) salas.delete(code);
+    if(ahora - sala.creada > 24 * 3600 * 1000){ salas.delete(code); borradas++; }
   }
+  if(borradas) guardarEstado();
 }, 30 * 60 * 1000);
+
+// auto-guardado cada 60 segundos
+setInterval(guardarEstado, 60 * 1000);
+
+// guardar antes de apagar (Railway envía SIGTERM al redeploy)
+function apagar(){
+  console.log("Guardando estado antes de cerrar...");
+  guardarEstado();
+  process.exit(0);
+}
+process.on("SIGTERM", apagar);
+process.on("SIGINT", apagar);
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log("¿Quién Soy? escuchando en puerto " + PORT));
