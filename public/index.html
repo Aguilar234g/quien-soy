@@ -141,6 +141,34 @@ input.codigo{text-transform:uppercase;letter-spacing:.4em;text-align:center;font
 .custom-preview.error{color:var(--coral)}
 .btn-terminar{margin-top:18px;width:min(900px,100%);padding:12px 0;border-radius:13px;font-size:.88rem;font-weight:700;background:transparent;color:rgba(255,107,90,.6);border:1px solid rgba(255,107,90,.25);transition:background .2s,color .2s}
 .btn-terminar:hover{background:rgba(255,107,90,.12);color:var(--coral)}
+.btn-volver{background:none;color:var(--crema-suave);font-size:.92rem;font-weight:700;padding:8px 0;transition:color .15s;align-self:flex-start}
+.btn-volver:hover{color:var(--oro)}
+@media(max-width:480px){
+  .pantalla{padding:16px 10px;gap:12px}
+  .caja{padding:14px;border-radius:16px}
+  .caja h2{font-size:1rem}
+  .rol-botones button{padding:16px;font-size:1.05rem}
+  .rol-botones .desc{font-size:.8rem}
+  .controles button{min-width:0;flex:1 1 45%;padding:12px 8px;font-size:.9rem}
+  .pista{padding:10px 12px;gap:8px}
+  .revelacion{padding:14px;border-radius:14px}
+  .revelacion .nombre{font-size:clamp(1.4rem,5.5vw,2.5rem)}
+  .justificacion{padding:10px 12px}
+  .justificacion li{font-size:.82rem}
+  .fila-sel.compacta button{min-width:0;flex:1 1 calc(33% - 8px);font-size:.8rem;padding:9px 4px}
+  .fila-sel button{min-width:0;font-size:.84rem;padding:10px 6px}
+  .panel-buzz .acciones{flex-direction:column;gap:8px}
+  .panel-buzz .acciones button{padding:12px}
+  .insignia span{padding:5px 10px;font-size:.76rem}
+  .codigo-grande{font-size:clamp(2.4rem,12vw,4.5rem);padding:10px 16px}
+  .cab-juego{gap:8px}
+  .zona-custom .prompt-box pre{font-size:.72rem;max-height:140px}
+  .btn-terminar{font-size:.82rem;padding:10px 0}
+  .fila-final{padding:12px 14px;gap:10px}
+  .fila-final .pos{font-size:1.2rem}
+  .fila-final .nom{font-size:1rem}
+  .fila-final .total{font-size:1.2rem}
+}
 </style>
 </head>
 <body>
@@ -153,10 +181,12 @@ input.codigo{text-transform:uppercase;letter-spacing:.4em;text-align:center;font
   <div class="rol-botones">
     <button id="btn-rol-host">🎙 Soy el presentador<span class="desc">Creo la partida, controlo las rondas y valido las respuestas</span></button>
     <button id="btn-rol-jugador">📱 Soy jugador<span class="desc">Me uno con un código y respondo desde mi móvil</span></button>
+    <button id="btn-rol-practica">🎮 Practicar solo<span class="desc">Juega solo con personajes nivel principiante — ideal para aprender</span></button>
   </div>
 </section>
 
 <section class="pantalla" id="p-config">
+  <button class="btn-volver" id="volver-config">← Volver</button>
   <h1 class="titulo" style="font-size:clamp(1.8rem,6vw,2.8rem)">Crear partida</h1>
   <div class="caja">
     <h2>Modo de juego</h2>
@@ -292,6 +322,7 @@ Napoleón Bonaparte,personaje,avanzado,"La victoria pertenece al más perseveran
 </section>
 
 <section class="pantalla centrada" id="p-unirse">
+  <button class="btn-volver" id="volver-unirse">← Volver</button>
   <h1 class="titulo" style="font-size:clamp(1.8rem,6vw,2.8rem)">Unirse a la partida</h1>
   <div class="caja" id="paso-codigo">
     <h2>Código de sala</h2>
@@ -334,6 +365,21 @@ Napoleón Bonaparte,personaje,avanzado,"La victoria pertenece al más perseveran
   <h1 class="podio-titulo" id="f-titulo">¡Tenemos<br><span>campeones!</span></h1>
   <div class="lista-final" id="f-lista"></div>
   <button class="btn-sec" id="btn-reiniciar" style="width:min(520px,100%);display:none">Crear otra partida</button>
+</section>
+
+<section class="pantalla" id="p-practica">
+  <button class="btn-volver" id="volver-practica">← Salir</button>
+  <div class="cab-juego">
+    <div class="progreso" id="pr-progreso"></div>
+    <div class="valor"><span class="num" id="pr-valor">50</span><span class="lbl">puntos<br>en juego</span></div>
+  </div>
+  <div class="insignia"><span>🧔 Personajes</span><span class="dif">🌱 Principiante</span></div>
+  <div class="zona-pistas" id="pr-pistas"></div>
+  <div id="pr-zona-accion"></div>
+  <div style="text-align:center;margin-top:10px">
+    <span style="font-family:var(--display);font-weight:900;font-size:1.3rem;color:var(--oro)" id="pr-score">0</span>
+    <span style="font-size:.82rem;color:var(--crema-suave);margin-left:6px">puntos</span>
+  </div>
 </section>
 
 <script src="/socket.io/socket.io.js"></script>
@@ -810,7 +856,7 @@ const NOMBRES_EQ = ["Equipo Dorado","Equipo Coral","Equipo Menta","Equipo Violet
 
 const $ = id => document.getElementById(id);
 function esc(s){ const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
-const P = ["p-rol","p-config","p-lobby","p-host","p-unirse","p-espera","p-jugador","p-final"];
+const P = ["p-rol","p-config","p-lobby","p-host","p-unirse","p-espera","p-jugador","p-final","p-practica"];
 function ver(id){ P.forEach(p => $(p).classList.toggle("activa", p === id)); }
 
 /* ---- sonido (host) ---- */
@@ -978,6 +1024,91 @@ function refreshPool(){
 /* ---- rol ---- */
 $("btn-rol-host").addEventListener("click", () => ver("p-config"));
 $("btn-rol-jugador").addEventListener("click", () => ver("p-unirse"));
+$("volver-config").addEventListener("click", () => ver("p-rol"));
+$("volver-unirse").addEventListener("click", () => {
+  $("paso-codigo").style.display = "block";
+  $("paso-datos").style.display = "none";
+  $("err-unirse").textContent = "";
+  $("err-datos").textContent = "";
+  $("inp-codigo").value = "";
+  cod = null; salaInfo = null; miEquipo = null;
+  ver("p-rol");
+});
+$("volver-practica").addEventListener("click", () => ver("p-rol"));
+
+/* ---- práctica solo ---- */
+let prMazo = [], prIdx = 0, prPistas = 0, prScore = 0, prResuelto = false, prBuzz = false;
+$("btn-rol-practica").addEventListener("click", () => {
+  const cards = BASE.filter(p => p.c === "personaje" && p.d === "principiante");
+  if(cards.length === 0) return;
+  prMazo = [...cards];
+  for(let i = prMazo.length-1; i > 0; i--){ const j = Math.floor(Math.random()*(i+1)); [prMazo[i],prMazo[j]] = [prMazo[j],prMazo[i]]; }
+  prMazo = prMazo.slice(0, 5);
+  prIdx = 0; prScore = 0; prPistas = 0; prResuelto = false; prBuzz = false;
+  renderPractica();
+  ver("p-practica");
+});
+function renderPractica(){
+  if(prIdx >= prMazo.length){ renderPracticaFin(); return; }
+  const t = prMazo[prIdx];
+  $("pr-progreso").textContent = "Tarjeta " + (prIdx + 1) + " de " + prMazo.length;
+  $("pr-valor").textContent = PUNTOS[prPistas] || 10;
+  $("pr-pistas").innerHTML = t.pistas.slice(0, prPistas + 1).map((p, j) =>
+    '<div class="pista"><span class="n">' + (j+1) + '.</span><span>' + esc(p) + '</span></div>'
+  ).join("");
+  $("pr-score").textContent = prScore;
+  const zona = $("pr-zona-accion");
+  if(prResuelto){
+    const refs = REFS[t.nombre] || [];
+    const items = t.pistas.slice(0, prPistas + 1).map((p, j) =>
+      '<li><span>' + esc(p) + '</span>' + (refs[j] ? '<span class="j-ref">' + esc(refs[j]) + '</span>' : '') + '</li>'
+    ).join("");
+    let botones;
+    if(prBuzz){
+      const pts = PUNTOS[prPistas] || 10;
+      botones = '<div class="controles" style="margin-top:14px">' +
+        '<button class="b-ok" style="flex:1;padding:14px;border-radius:13px;font-size:1.05rem;font-weight:700" id="pr-si">✔ ¡Acerté! +' + pts + '</button>' +
+        '<button class="b-no" style="flex:1;padding:14px;border-radius:13px;font-size:1.05rem;font-weight:700" id="pr-no">✘ Fallé</button></div>';
+    } else {
+      botones = '<div class="controles" style="margin-top:14px">' +
+        '<button class="c-siguiente" id="pr-siguiente">' + (prIdx + 1 < prMazo.length ? 'Siguiente tarjeta' : 'Ver resultado') + '</button></div>';
+    }
+    zona.innerHTML = '<div class="revelacion">' +
+      '<div class="es">' + esc(CATS[t.c].rev) + '</div><div class="nombre">' + esc(t.nombre) + '</div>' +
+      '<div class="verso">' + esc(t.verso) + '</div>' +
+      (items ? '<div class="justificacion"><div class="j-titulo">📖 De dónde sale cada pista</div><ol>' + items + '</ol></div>' : '') +
+      '</div>' + botones;
+    if(prBuzz){
+      $("pr-si").addEventListener("click", () => { prScore += PUNTOS[prPistas] || 10; prBuzz = false; prIdx++; prPistas = 0; prResuelto = false; renderPractica(); });
+      $("pr-no").addEventListener("click", () => { prBuzz = false; prIdx++; prPistas = 0; prResuelto = false; renderPractica(); });
+    } else {
+      $("pr-siguiente").addEventListener("click", () => { prIdx++; prPistas = 0; prResuelto = false; renderPractica(); });
+    }
+  } else {
+    zona.innerHTML = '<div class="controles">' +
+      (prPistas < 4 ? '<button class="c-pista" id="pr-pista">Mostrar pista</button>' : '') +
+      '<button class="c-revelar" id="pr-revelar">Revelar</button></div>' +
+      '<div style="text-align:center;margin-top:16px"><button class="btn-buzz" id="pr-buzz" style="width:min(200px,60vw);aspect-ratio:1;font-size:clamp(1.2rem,5vw,1.8rem)">¡YO SÉ!</button></div>';
+    if($("pr-pista")) $("pr-pista").addEventListener("click", () => { if(prPistas < 4){ prPistas++; renderPractica(); } });
+    $("pr-revelar").addEventListener("click", () => { prBuzz = false; prResuelto = true; renderPractica(); });
+    $("pr-buzz").addEventListener("click", () => { prBuzz = true; prResuelto = true; renderPractica(); });
+  }
+}
+function renderPracticaFin(){
+  const max = prMazo.length * 50;
+  $("pr-progreso").textContent = "Práctica terminada";
+  $("pr-valor").textContent = prScore;
+  $("pr-pistas").innerHTML = "";
+  $("pr-score").textContent = prScore;
+  $("pr-zona-accion").innerHTML = '<div class="revelacion" style="border-color:var(--oro)">' +
+    '<div class="es">Resultado</div><div class="nombre">' + prScore + ' / ' + max + '</div>' +
+    '<div class="verso">' + (prScore === max ? '¡Perfecto! 🏆' : prScore >= max * 0.6 ? '¡Buen trabajo! 👏' : 'Sigue practicando 💪') + '</div></div>' +
+    '<div class="controles" style="margin-top:14px">' +
+    '<button class="c-pista" id="pr-otra">🔄 Otra ronda</button>' +
+    '<button class="c-revelar" id="pr-salir">← Menú</button></div>';
+  $("pr-otra").addEventListener("click", () => $("btn-rol-practica").click());
+  $("pr-salir").addEventListener("click", () => ver("p-rol"));
+}
 
 /* ---- config host ---- */
 function multiSel(idCont, defs, set, labelTodas){
