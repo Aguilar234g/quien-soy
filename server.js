@@ -112,8 +112,12 @@ io.on("connection", socket => {
   socket.on("crear", (datos, ack) => {
     try{
       const { config, mazo } = datos || {};
-      if(!config || !Array.isArray(mazo) || mazo.length === 0){
+      if(!config || !Array.isArray(mazo) || mazo.length === 0 || mazo.length > 200){
         return ack && ack({ error: "Configuración inválida." });
+      }
+      for(const t of mazo){
+        if(!t || typeof t.nombre !== "string" || !Array.isArray(t.pistas) || t.pistas.length < 5)
+          return ack && ack({ error: "Tarjeta inválida en el mazo." });
       }
       const code = genCodigo();
       const hostKey = genId("k");
@@ -236,6 +240,20 @@ io.on("connection", socket => {
       guardarEstado();
       return;
     }
+    if(a === "terminar"){
+      e.fase = "final";
+      e.ranking = calcularRanking(sala);
+      e.ronda = null;
+      publicar(sala);
+      guardarEstado();
+      return;
+    }
+    if(a === "cerrar"){
+      io.to(sala.code).emit("sala_cerrada");
+      salas.delete(sala.code);
+      guardarEstado();
+      return;
+    }
     if(e.fase !== "jugando" || !r) return;
 
     if(a === "pista" && !r.resuelto && !r.buzz) mostrarPista(sala);
@@ -266,18 +284,6 @@ io.on("connection", socket => {
         e.ronda = null;
         publicar(sala);
       }
-      guardarEstado();
-    }
-    if(a === "terminar"){
-      e.fase = "final";
-      e.ranking = calcularRanking(sala);
-      e.ronda = null;
-      publicar(sala);
-      guardarEstado();
-    }
-    if(a === "cerrar"){
-      io.to(sala.code).emit("sala_cerrada");
-      salas.delete(sala.code);
       guardarEstado();
     }
   });

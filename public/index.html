@@ -916,7 +916,7 @@ socket.on("sala_cerrada", () => { alert("El presentador cerró la sala."); locat
 
 function reclamarSiHost(){
   const m = location.hash.match(/^#h=([A-Z]{4})\.(.+)$/);
-  if(!m || rol === "jugador") return;
+  if(!m || (rol && rol !== "host")) return;
   socket.emit("reclamar_host", { code: m[1], key: m[2] }, res => {
     if(res && res.ok){
       rol = "host"; cod = m[1]; hostKey = m[2]; est = res.estado;
@@ -956,7 +956,7 @@ function parseCSVLine(line){
       else cur += ch;
     } else {
       if(ch === '"') inQ = true;
-      else if(ch === ',' || ch === ';' || ch === '\t'){ fields.push(cur.trim()); cur = ""; }
+      else if(ch === ',' || ch === '\t'){ fields.push(cur.trim()); cur = ""; }
       else cur += ch;
     }
   }
@@ -972,7 +972,7 @@ function parseCustomCards(text){
   const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l && !l.match(/^nombre[,;\t]/i));
   const cards = [];
   for(let line of lines){
-    line = line.replace(/^\d+[,;\t]\s*/, "");
+    line = line.replace(/^\d+[\.\)\-,;\t]\s*/, "");
     if(!line) continue;
     const f = parseCSVLine(line);
     if(f.length < 7) continue;
@@ -1032,7 +1032,7 @@ function shuffleCrypto(arr){
 }
 const HIST_KEY = "qs_hist";
 const HIST_MAX = 80;
-function getHist(){ try{ return JSON.parse(localStorage.getItem(HIST_KEY)) || []; }catch(e){ return []; } }
+function getHist(){ try{ const v = JSON.parse(localStorage.getItem(HIST_KEY)); return Array.isArray(v) ? v : []; }catch(e){ return []; } }
 function addHist(nombres){
   let h = getHist();
   h.push(...nombres);
@@ -1053,19 +1053,22 @@ $("volver-config").addEventListener("click", () => ver("p-rol"));
 $("volver-unirse").addEventListener("click", () => {
   $("paso-codigo").style.display = "block";
   $("paso-datos").style.display = "none";
+  $("paso-equipo").style.display = "none";
   $("err-unirse").textContent = "";
   $("err-datos").textContent = "";
   $("inp-codigo").value = "";
+  $("inp-nombre").value = "";
   cod = null; salaInfo = null; miEquipo = null;
   ver("p-rol");
 });
-$("volver-practica").addEventListener("click", () => ver("p-rol"));
+$("volver-practica").addEventListener("click", () => { rol = null; ver("p-rol"); });
 
 /* ---- práctica solo ---- */
 let prMazo = [], prIdx = 0, prPistas = 0, prScore = 0, prResuelto = false, prBuzz = false;
 $("btn-rol-practica").addEventListener("click", () => {
   const cards = BASE.filter(p => p.c === "personaje" && p.d === "principiante");
   if(cards.length === 0) return;
+  rol = "practica";
   prMazo = smartShuffle(cards).slice(0, 5);
   addHist(prMazo.map(m => m.nombre));
   prIdx = 0; prScore = 0; prPistas = 0; prResuelto = false; prBuzz = false;
@@ -1204,6 +1207,7 @@ $("csv-file").addEventListener("change", e => {
   const reader = new FileReader();
   reader.onload = () => { $("csv-texto").value = reader.result; refreshCustomPreview(); };
   reader.readAsText(file, "UTF-8");
+  e.target.value = "";
   document.querySelectorAll(".tab-custom button").forEach(b => b.classList.toggle("sel", b.dataset.tab === "texto"));
   $("tab-texto").style.display = "block"; $("tab-archivo").style.display = "none";
 });
@@ -1220,12 +1224,12 @@ $("btn-crear").addEventListener("click", () => {
     refs: REFS[p.nombre] || [],
     catRev: (CATS[p.c] && CATS[p.c].rev) || ("La respuesta era")
   }));
-  addHist(mazo.map(m => m.nombre));
   socket.emit("crear", {
     config: { modo, equipos: NOMBRES_EQ.slice(0, nEq), pen, doble },
     mazo
   }, res => {
     if(!res || res.error){ $("err-config").textContent = (res && res.error) || "Error al crear la sala."; return; }
+    addHist(mazo.map(m => m.nombre));
     rol = "host"; cod = res.code; hostKey = res.hostKey;
     location.hash = "h=" + cod + "." + hostKey;   // permite recuperar la sala si recargas
     $("lobby-codigo").textContent = cod;
@@ -1262,6 +1266,7 @@ $("btn-terminar").addEventListener("click", () => {
 });
 
 /* ---- render host ---- */
+let hRondaI = -1, hPistasN = 0, hRev = false;
 function renderHost(){
   if(!est) return;
   if(est.fase === "lobby"){ renderLobby(); ver("p-lobby"); return; }
@@ -1276,7 +1281,10 @@ function renderHost(){
   const ban = $("h-banner");
   if(r.doble){ ban.textContent = "🔥 Ronda final — ¡puntos y penalizaciones dobles!"; ban.style.display = "block"; }
   else ban.style.display = "none";
-  $("h-pistas").innerHTML = pintaPistas(r) + (r.resuelto ? pintaRevelacion(r) : "");
+  if(r.i !== hRondaI || r.pistas.length !== hPistasN || r.resuelto !== hRev){
+    $("h-pistas").innerHTML = pintaPistas(r) + (r.resuelto ? pintaRevelacion(r) : "");
+    hRondaI = r.i; hPistasN = r.pistas.length; hRev = r.resuelto;
+  }
   const buzz = $("h-buzz");
   if(r.buzz && !r.resuelto){
     buzz.style.display = "block";
@@ -1370,6 +1378,9 @@ $("btn-buscar").addEventListener("click", () => {
         });
         cont.appendChild(b);
       });
+    } else {
+      $("paso-equipo").style.display = "none";
+      miEquipo = null;
     }
   });
 });
@@ -1388,7 +1399,7 @@ $("btn-unirse").addEventListener("click", () => {
   });
 });
 
-let pistasPrevias = 0;
+let pistasPrevias = 0, jRondaI = -1, jPistasN = 0, jRev = false;
 function renderJugador(){
   if(!est) return;
   if(est.fase === "lobby"){
@@ -1402,7 +1413,8 @@ function renderJugador(){
   if(est.fase === "final"){ renderFinal(false); return; }
   const r = est.ronda; if(!r) return;
   ver("p-jugador");
-  if(r.pistas.length !== pistasPrevias && navigator.vibrate) navigator.vibrate(80);
+  const pistaNueva = r.pistas.length !== pistasPrevias;
+  if(pistaNueva && navigator.vibrate) navigator.vibrate(80);
   pistasPrevias = r.pistas.length;
   $("j-progreso").textContent = "Tarjeta " + (r.i + 1) + " de " + r.total;
   $("j-valor").textContent = r.valor;
@@ -1411,7 +1423,10 @@ function renderJugador(){
   $("j-insignia").innerHTML = '<span>' + esc(jCatLabel) + '</span><span class="dif">' + esc(jDifLabel) + '</span>';
   const ban = $("j-banner");
   if(r.doble){ ban.textContent = "🔥 Ronda final x2"; ban.style.display = "block"; } else ban.style.display = "none";
-  $("j-pistas").innerHTML = pintaPistas(r) + (r.resuelto ? pintaRevelacion(r) : "");
+  if(r.i !== jRondaI || r.pistas.length !== jPistasN || r.resuelto !== jRev){
+    $("j-pistas").innerHTML = pintaPistas(r) + (r.resuelto ? pintaRevelacion(r) : "");
+    jRondaI = r.i; jPistasN = r.pistas.length; jRev = r.resuelto;
+  }
   $("j-marcador").innerHTML = pintaMarcador();
 
   const zona = $("j-zona-buzz");
@@ -1434,6 +1449,7 @@ function renderJugador(){
       if(navigator.vibrate) navigator.vibrate([60,40,60]);
     });
   }
+  if(pistaNueva) setTimeout(() => { const z = $("j-zona-buzz"); if(z) z.scrollIntoView({ behavior:"smooth", block:"nearest" }); }, 120);
 }
 
 /* ---- final ---- */
