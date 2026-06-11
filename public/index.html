@@ -123,6 +123,22 @@ input.codigo{text-transform:uppercase;letter-spacing:.4em;text-align:center;font
 .sync.off{color:var(--coral)}
 #confeti{position:fixed;inset:0;pointer-events:none;z-index:100}
 @media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}}
+.zona-custom{margin-top:14px;display:none}
+.zona-custom.visible{display:block}
+.zona-custom textarea{width:100%;min-height:140px;font-family:var(--cuerpo);font-size:.88rem;padding:12px;border-radius:12px;border:2px solid var(--tarjeta-claro);background:var(--noche-prof);color:var(--crema);resize:vertical}
+.zona-custom textarea::placeholder{color:rgba(255,246,227,.3)}
+.zona-custom .prompt-box{background:rgba(94,230,184,.06);border:1px solid rgba(94,230,184,.3);border-radius:14px;padding:14px;margin-bottom:12px;position:relative}
+.zona-custom .prompt-box pre{white-space:pre-wrap;word-break:break-word;font-size:.78rem;line-height:1.5;color:var(--crema-suave);max-height:180px;overflow-y:auto}
+.zona-custom .btn-copiar{position:absolute;top:8px;right:8px;padding:5px 12px;border-radius:8px;font-size:.72rem;font-weight:700;background:var(--menta);color:var(--noche-prof);cursor:pointer;border:none}
+.zona-custom .btn-copiar:hover{transform:scale(1.05)}
+.zona-custom label.file-label{display:block;text-align:center;padding:14px;border:2px dashed var(--tarjeta-claro);border-radius:14px;cursor:pointer;font-weight:700;color:var(--crema-suave);transition:border-color .2s}
+.zona-custom label.file-label:hover{border-color:var(--oro)}
+.zona-custom .file-label input{display:none}
+.zona-custom .tab-custom{display:flex;gap:6px;margin-bottom:10px}
+.zona-custom .tab-custom button{flex:1;padding:9px 6px;border-radius:10px;font-size:.82rem;font-weight:700;background:var(--tarjeta-claro);color:var(--crema-suave);border:none;cursor:pointer}
+.zona-custom .tab-custom button.sel{background:var(--oro);color:var(--noche-prof)}
+.custom-preview{margin-top:10px;font-size:.82rem;font-weight:700;color:var(--menta);text-align:center}
+.custom-preview.error{color:var(--coral)}
 </style>
 </head>
 <body>
@@ -152,10 +168,61 @@ input.codigo{text-transform:uppercase;letter-spacing:.4em;text-align:center;font
         <button data-n="2">2</button><button data-n="3" class="sel">3</button><button data-n="4">4</button>
       </div>
     </div>
-    <h2>Categorías</h2>
-    <div class="fila-sel compacta" id="sel-cats"></div>
-    <h2>Dificultad</h2>
-    <div class="fila-sel compacta" id="sel-difs"></div>
+    <h2>Fuente de tarjetas</h2>
+    <div class="fila-sel" id="sel-fuente">
+      <button data-f="biblia" class="sel">📖 Bíblicas</button>
+      <button data-f="custom">✏️ Personalizadas</button>
+      <button data-f="ambas">🔀 Ambas</button>
+    </div>
+
+    <div id="zona-biblia">
+      <h2>Categorías</h2>
+      <div class="fila-sel compacta" id="sel-cats"></div>
+      <h2>Dificultad</h2>
+      <div class="fila-sel compacta" id="sel-difs"></div>
+    </div>
+
+    <div class="zona-custom" id="zona-custom">
+      <h2>Tarjetas personalizadas</h2>
+      <div class="prompt-box">
+        <button class="btn-copiar" id="btn-copiar-prompt">Copiar</button>
+        <p style="font-size:.78rem;font-weight:700;color:var(--menta);margin-bottom:6px">Prompt para IA — copia y pégalo en ChatGPT, Claude, Gemini, etc.</p>
+        <pre id="prompt-ia">Genera tarjetas para un juego de trivia llamado "¿Quién Soy?". El tema que quiero es: [ESCRIBE TU TEMA AQUÍ, ej: "Historia de la iglesia", "Personajes del Antiguo Testamento", "Países del mundo", "Ciencia"].
+
+Cada tarjeta tiene 5 pistas que van de difícil a fácil (la pista 1 es la más difícil, la 5 la más obvia). El jugador debe adivinar "quién soy" o "qué soy".
+
+FORMATO: genera un CSV con estas columnas exactas (separadas por coma):
+nombre,categoria,dificultad,verso,pista1,pista2,pista3,pista4,pista5
+
+Reglas:
+- nombre: la respuesta (ej: "Albert Einstein")
+- categoria: una palabra (ej: personaje, lugar, objeto, evento, concepto)
+- dificultad: principiante, intermedio, avanzado o experto
+- verso: una frase célebre o dato clave entre comillas (ej: "E=mc²")
+- pista1 a pista5: escritas en primera persona ("Nací en...", "Soy conocido por...")
+- Cada pista en comillas dobles si contiene comas
+- NO incluyas fila de encabezado, solo los datos
+- Genera al menos 15 tarjetas variadas
+
+Ejemplo de una línea:
+Albert Einstein,personaje,intermedio,"E=mc²","Nací en Alemania en 1879 pero me hice ciudadano de otro país.","Trabajé en una oficina de patentes antes de revolucionar la física.","Recibí el Nobel de Física, pero no por mi teoría más famosa.","Mi lengua afuera en una foto es una de las imágenes más conocidas del siglo XX.","Soy el autor de la teoría de la relatividad."</pre>
+      </div>
+      <div class="tab-custom">
+        <button class="sel" data-tab="texto">📝 Pegar texto</button>
+        <button data-tab="archivo">📁 Subir archivo</button>
+      </div>
+      <div id="tab-texto">
+        <textarea id="csv-texto" placeholder="Pega aquí el CSV que te generó la IA..."></textarea>
+      </div>
+      <div id="tab-archivo" style="display:none">
+        <label class="file-label">
+          📁 Pulsa aquí para elegir archivo CSV o TXT
+          <input type="file" id="csv-file" accept=".csv,.txt,.tsv">
+        </label>
+      </div>
+      <div class="custom-preview" id="custom-preview"></div>
+    </div>
+
     <div class="contador-pool" id="contador-pool"></div>
     <h2>Tarjetas por partida</h2>
     <div class="fila-sel" id="sel-dur">
@@ -781,6 +848,8 @@ let rol = null, cod = null, hostKey = null;
 let est = null;
 let catSel = new Set(), difSel = new Set();
 let modo = "equipos", nEq = 3, dur = "8", pen = 10, doble = true;
+let fuente = "biblia";
+let customCards = [];
 let miId = null, miNombre = "", miEquipo = null;
 let ronAnterior = -1, buzzAnterior = null, resueltoAnterior = false;
 
@@ -819,8 +888,62 @@ socket.on("estado", e => {
   }
 });
 
+/* ---- CSV parser (maneja comillas, comas internas) ---- */
+function parseCSVLine(line){
+  const fields = []; let cur = "", inQ = false;
+  for(let i = 0; i < line.length; i++){
+    const ch = line[i];
+    if(inQ){
+      if(ch === '"' && line[i+1] === '"'){ cur += '"'; i++; }
+      else if(ch === '"') inQ = false;
+      else cur += ch;
+    } else {
+      if(ch === '"') inQ = true;
+      else if(ch === ',' || ch === ';' || ch === '\t'){ fields.push(cur.trim()); cur = ""; }
+      else cur += ch;
+    }
+  }
+  fields.push(cur.trim());
+  return fields;
+}
+function parseCustomCards(text){
+  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l && !l.match(/^nombre[,;\t]/i));
+  const cards = [];
+  for(const line of lines){
+    const f = parseCSVLine(line);
+    if(f.length < 9) continue;
+    const [nombre, cat, dif, verso, ...pistas] = f;
+    if(!nombre || pistas.filter(p=>p).length < 3) continue;
+    cards.push({
+      c: cat.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/\s+/g,"_") || "personalizado",
+      d: dif.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"") || "intermedio",
+      nombre, verso: verso || "",
+      pistas: [pistas[0]||"",pistas[1]||"",pistas[2]||"",pistas[3]||pistas[2]||"",pistas[4]||pistas[3]||pistas[2]||""],
+      custom: true
+    });
+  }
+  return cards;
+}
+function refreshCustomPreview(){
+  const txt = $("csv-texto").value;
+  customCards = parseCustomCards(txt);
+  const el = $("custom-preview");
+  if(!txt.trim()){ el.textContent = ""; el.className = "custom-preview"; }
+  else if(customCards.length === 0){ el.textContent = "⚠ No se detectaron tarjetas válidas. Revisa el formato."; el.className = "custom-preview error"; }
+  else { el.textContent = "✓ " + customCards.length + " tarjeta" + (customCards.length>1?"s":"") + " detectada" + (customCards.length>1?"s":""); el.className = "custom-preview"; }
+  refreshPool();
+}
+
 function pool(){
-  return BASE.filter(p => (catSel.size === 0 || catSel.has(p.c)) && (difSel.size === 0 || difSel.has(p.d)));
+  const biblia = BASE.filter(p => (catSel.size === 0 || catSel.has(p.c)) && (difSel.size === 0 || difSel.has(p.d)));
+  if(fuente === "biblia") return biblia;
+  if(fuente === "custom") return customCards;
+  return [...biblia, ...customCards];
+}
+function refreshPool(){
+  const n = pool().length;
+  $("contador-pool").textContent = n === 0 ? "⚠ Ninguna tarjeta disponible" : n + " tarjetas disponibles";
+  $("contador-pool").classList.toggle("vacio", n === 0);
 }
 
 /* ---- rol ---- */
@@ -836,9 +959,7 @@ function multiSel(idCont, defs, set, labelTodas){
   const ref = () => {
     bT.classList.toggle("sel", set.size === 0);
     [...cont.children].slice(1).forEach((b,i) => b.classList.toggle("sel", set.has(claves[i])));
-    const n = pool().length;
-    $("contador-pool").textContent = n === 0 ? "⚠ Ninguna tarjeta coincide" : n + " tarjetas disponibles";
-    $("contador-pool").classList.toggle("vacio", n === 0);
+    refreshPool();
   };
   bT.addEventListener("click", () => { set.clear(); ref(); });
   cont.appendChild(bT);
@@ -869,16 +990,52 @@ selU("sel-dur", b => { dur = b.dataset.d; });
 selU("sel-pen", b => { pen = parseInt(b.dataset.p, 10); });
 selU("sel-doble", b => { doble = b.dataset.x === "si"; });
 
+selU("sel-fuente", b => {
+  fuente = b.dataset.f;
+  $("zona-biblia").style.display = fuente === "custom" ? "none" : "block";
+  $("zona-custom").classList.toggle("visible", fuente !== "biblia");
+  refreshPool();
+});
+$("btn-copiar-prompt").addEventListener("click", () => {
+  const txt = $("prompt-ia").textContent;
+  navigator.clipboard.writeText(txt).then(() => {
+    $("btn-copiar-prompt").textContent = "✓ Copiado";
+    setTimeout(() => $("btn-copiar-prompt").textContent = "Copiar", 2000);
+  }).catch(() => {
+    const ta = document.createElement("textarea"); ta.value = txt; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); document.body.removeChild(ta);
+    $("btn-copiar-prompt").textContent = "✓ Copiado";
+    setTimeout(() => $("btn-copiar-prompt").textContent = "Copiar", 2000);
+  });
+});
+document.querySelectorAll(".tab-custom button").forEach(b => {
+  b.addEventListener("click", () => {
+    document.querySelectorAll(".tab-custom button").forEach(x => x.classList.toggle("sel", x === b));
+    $("tab-texto").style.display = b.dataset.tab === "texto" ? "block" : "none";
+    $("tab-archivo").style.display = b.dataset.tab === "archivo" ? "block" : "none";
+  });
+});
+$("csv-texto").addEventListener("input", refreshCustomPreview);
+$("csv-file").addEventListener("change", e => {
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = () => { $("csv-texto").value = reader.result; refreshCustomPreview(); };
+  reader.readAsText(file, "UTF-8");
+  document.querySelectorAll(".tab-custom button").forEach(b => b.classList.toggle("sel", b.dataset.tab === "texto"));
+  $("tab-texto").style.display = "block"; $("tab-archivo").style.display = "none";
+});
+
 $("btn-crear").addEventListener("click", () => {
+  if(fuente !== "biblia" && $("csv-texto").value.trim()) refreshCustomPreview();
   const lista = pool();
-  if(lista.length === 0){ $("err-config").textContent = "Ninguna tarjeta coincide con la selección."; return; }
+  if(lista.length === 0){ $("err-config").textContent = "Ninguna tarjeta disponible. Agrega tarjetas o cambia la selección."; return; }
   $("err-config").textContent = "";
   const barajadas = [...lista];
   for(let i = barajadas.length-1; i > 0; i--){ const j = Math.floor(Math.random()*(i+1)); [barajadas[i],barajadas[j]] = [barajadas[j],barajadas[i]]; }
   const n = dur === "all" ? barajadas.length : Math.min(parseInt(dur,10), barajadas.length);
   const mazo = barajadas.slice(0, n).map(p => ({
     c:p.c, d:p.d, nombre:p.nombre, verso:p.verso, pistas:p.pistas,
-    refs: REFS[p.nombre] || [], catRev: CATS[p.c].rev
+    refs: REFS[p.nombre] || [],
+    catRev: (CATS[p.c] && CATS[p.c].rev) || ("La respuesta era")
   }));
   socket.emit("crear", {
     config: { modo, equipos: NOMBRES_EQ.slice(0, nEq), pen, doble },
