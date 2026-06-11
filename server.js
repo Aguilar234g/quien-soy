@@ -113,6 +113,14 @@ io.on("connection", socket => {
     ack && ack({ ok: true, estado: sala.est });
   });
 
+  socket.on("pantalla", ({ code }, ack) => {
+    const sala = salas.get((code || "").toUpperCase());
+    if(!sala) return ack && ack({ error: "No existe una sala con ese código." });
+    conexiones.set(socket.id, { code: sala.code, esHost: false, esPantalla: true });
+    socket.join(sala.code);
+    ack && ack({ ok: true, estado: sala.est });
+  });
+
   socket.on("comprobar", ({ code }, ack) => {
     const sala = salas.get((code || "").toUpperCase());
     if(!sala) return ack && ack({ error: "No existe una sala con ese código." });

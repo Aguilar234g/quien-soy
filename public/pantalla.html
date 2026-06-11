@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>¿Quién Soy? — Pantalla</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700;9..144,900&family=Space+Grotesk:wght@400;500;700&display=swap');
+:root{
+  --noche:#241a4a; --noche-prof:#1a1238;
+  --tarjeta:#2f2460; --tarjeta-claro:#3b2e76;
+  --oro:#f5b82e; --coral:#ff6b5a; --menta:#5ee6b8;
+  --crema:#fff6e3; --crema-suave:rgba(255,246,227,.62);
+  --display:'Fraunces', Georgia, serif;
+  --cuerpo:'Space Grotesk', system-ui, sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden}
+body{font-family:var(--cuerpo);background:radial-gradient(1400px 900px at 50% -5%, #3a2c74 0%, var(--noche) 45%, var(--noche-prof) 100%);color:var(--crema);display:flex;flex-direction:column}
+.pantalla{display:none;flex:1;flex-direction:column;align-items:center;justify-content:center;padding:40px;gap:24px;overflow:hidden}
+.pantalla.activa{display:flex}
+
+/* ---- PORTADA ---- */
+#p-portada{background:radial-gradient(ellipse at 50% 40%, #3a2c74 0%, var(--noche) 50%, var(--noche-prof) 100%)}
+.portada-titulo{font-family:var(--display);font-weight:900;font-size:clamp(4rem,10vw,8rem);line-height:.92;text-align:center;letter-spacing:-.03em;text-shadow:0 8px 40px rgba(0,0,0,.5)}
+.portada-titulo .q{color:var(--oro);display:inline-block;transform:rotate(-8deg)}
+.portada-sub{text-align:center;color:var(--crema-suave);font-size:clamp(1.2rem,2.5vw,2rem);max-width:700px}
+.portada-input{display:flex;gap:16px;align-items:center}
+.portada-input input{font-family:var(--display);font-weight:900;font-size:3rem;letter-spacing:.4em;text-align:center;text-transform:uppercase;width:320px;padding:16px 24px;border-radius:18px;border:3px solid var(--oro);background:var(--noche-prof);color:var(--oro);outline:none}
+.portada-input input::placeholder{color:rgba(245,184,46,.3);letter-spacing:.2em;font-size:2rem}
+.portada-input button{padding:18px 36px;border-radius:18px;font-size:1.3rem;font-weight:700;background:var(--coral);color:#fff;border:none;cursor:pointer;font-family:var(--cuerpo);transition:transform .12s}
+.portada-input button:hover{transform:translateY(-2px)}
+.portada-err{color:var(--coral);font-size:1.1rem;font-weight:700;min-height:1.4em}
+.portada-nota{color:var(--crema-suave);font-size:1rem;opacity:.6}
+
+/* ---- LOBBY ---- */
+#p-lobby{justify-content:flex-start;padding-top:30px;gap:20px}
+.lobby-header{text-align:center}
+.lobby-header h2{font-family:var(--display);font-weight:900;font-size:clamp(2rem,4vw,3.2rem);margin-bottom:4px}
+.lobby-header p{color:var(--crema-suave);font-size:clamp(1rem,2vw,1.4rem)}
+.lobby-cuerpo{display:flex;gap:40px;align-items:flex-start;justify-content:center;flex:1;width:100%;max-width:1400px;overflow:hidden}
+.lobby-izq{display:flex;flex-direction:column;align-items:center;gap:20px;min-width:320px}
+.lobby-codigo{font-family:var(--display);font-weight:900;font-size:clamp(3.5rem,8vw,6rem);letter-spacing:.2em;color:var(--oro);text-align:center;background:var(--tarjeta);border:3px dashed var(--oro);border-radius:24px;padding:16px 36px}
+.lobby-qr{background:#fff;border-radius:20px;padding:16px;display:flex;align-items:center;justify-content:center}
+.lobby-qr canvas{display:block}
+.lobby-url{color:var(--crema-suave);font-size:1rem;text-align:center;word-break:break-all}
+.lobby-der{flex:1;max-width:800px;overflow-y:auto;max-height:calc(100vh - 200px)}
+.lobby-der h3{font-family:var(--display);font-weight:700;font-size:1.6rem;margin-bottom:12px;color:var(--crema-suave)}
+.jugadores-grid{display:flex;flex-wrap:wrap;gap:10px;align-content:flex-start}
+.jug-tag{background:var(--tarjeta);border:2px solid var(--tarjeta-claro);border-radius:999px;padding:10px 22px;font-size:1.2rem;font-weight:700;animation:aparecer .4s ease both}
+@keyframes aparecer{from{opacity:0;transform:scale(.7) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.grupo-eq{background:var(--noche-prof);border-radius:18px;padding:16px 20px;margin-bottom:12px}
+.grupo-eq-titulo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1.2rem;margin-bottom:10px}
+.grupo-eq-titulo .dot{width:16px;height:16px;border-radius:50%}
+.lobby-esperando{color:var(--crema-suave);font-size:1.3rem;font-style:italic;text-align:center;padding:40px;opacity:.6}
+
+/* ---- JUEGO ---- */
+#p-juego{justify-content:flex-start;padding:24px 40px;gap:14px}
+.juego-cab{width:100%;max-width:1200px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.juego-progreso{font-size:1.1rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--crema-suave)}
+.juego-valor{display:flex;align-items:baseline;gap:10px;background:var(--tarjeta);border-radius:18px;padding:10px 22px;border:3px solid var(--oro)}
+.juego-valor .num{font-family:var(--display);font-weight:900;font-size:clamp(2rem,4vw,3rem);color:var(--oro);line-height:1}
+.juego-valor .lbl{font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--crema-suave)}
+.juego-insignia{display:flex;gap:10px}
+.juego-insignia span{background:var(--tarjeta);border:1px solid var(--tarjeta-claro);border-radius:999px;padding:8px 18px;font-size:1rem;font-weight:700}
+.juego-insignia .dif{border-color:rgba(245,184,46,.5);color:var(--oro)}
+.juego-banner{width:100%;max-width:1200px;text-align:center;font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:1.2rem;background:linear-gradient(90deg, rgba(245,184,46,.15), rgba(255,107,90,.2), rgba(245,184,46,.15));border:2px solid var(--oro);color:var(--oro);border-radius:16px;padding:12px}
+.juego-contenido{display:flex;gap:30px;width:100%;max-width:1200px;flex:1;overflow:hidden}
+.juego-pistas{flex:1;display:flex;flex-direction:column;gap:12px;overflow-y:auto}
+.pista{background:var(--tarjeta);border-left:8px solid var(--oro);border-radius:16px;padding:18px 22px;font-size:clamp(1.1rem,2.2vw,1.6rem);line-height:1.45;display:flex;gap:14px;animation:entrar .4s ease both}
+.pista .n{font-family:var(--display);font-weight:900;color:var(--oro);font-size:1.4em;flex-shrink:0}
+@keyframes entrar{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.juego-lateral{width:300px;display:flex;flex-direction:column;gap:12px;flex-shrink:0}
+.marcador-tv{background:var(--tarjeta);border-radius:18px;padding:16px;overflow-y:auto}
+.marcador-tv h4{font-family:var(--display);font-weight:700;font-size:1rem;color:var(--crema-suave);margin-bottom:10px;letter-spacing:.1em;text-transform:uppercase}
+.marc-fila{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;margin-bottom:6px;transition:background .3s}
+.marc-fila.lider{background:rgba(245,184,46,.12);border:1px solid rgba(245,184,46,.3)}
+.marc-fila .dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+.marc-fila .nom{flex:1;font-weight:700;font-size:1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.marc-fila .pts{font-family:var(--display);font-weight:900;font-size:1.2rem;color:var(--oro)}
+.marc-fila .pts.neg{color:var(--coral)}
+
+/* ---- BUZZ ---- */
+.buzz-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:50;animation:fadeIn .2s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.buzz-card{background:linear-gradient(135deg, #5a4308, #7a5c0e);border:4px solid var(--oro);border-radius:28px;padding:40px 60px;text-align:center;animation:popIn .3s ease both;box-shadow:0 20px 80px rgba(245,184,46,.3)}
+@keyframes popIn{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:scale(1)}}
+.buzz-label{font-size:1rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--crema-suave);margin-bottom:8px}
+.buzz-nombre{font-family:var(--display);font-weight:900;font-size:clamp(2.5rem,6vw,4.5rem);color:var(--oro);line-height:1.1}
+.buzz-equipo{font-size:1.2rem;color:var(--crema-suave);margin-top:6px}
+
+/* ---- REVELACION ---- */
+.rev-card{width:100%;max-width:1200px;background:linear-gradient(135deg, var(--tarjeta-claro), var(--tarjeta));border:3px solid var(--menta);border-radius:24px;padding:28px;text-align:center;animation:entrar .5s ease both}
+.rev-es{font-size:.9rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--menta)}
+.rev-nombre{font-family:var(--display);font-weight:900;font-size:clamp(2.5rem,6vw,4.5rem);line-height:1.05;margin:8px 0 10px}
+.rev-verso{color:var(--crema-suave);font-size:clamp(1rem,2vw,1.3rem);font-style:italic;max-width:800px;margin:0 auto}
+.rev-gano{margin-top:12px;font-size:1.3rem;color:var(--oro);font-weight:700}
+.rev-refs{margin-top:16px;text-align:left;background:rgba(26,18,56,.55);border:1px solid var(--tarjeta-claro);border-radius:16px;padding:16px 20px;max-width:900px;margin-left:auto;margin-right:auto}
+.rev-refs-titulo{font-size:.8rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--menta);margin-bottom:10px}
+.rev-refs ol{list-style:none;display:flex;flex-direction:column;gap:8px;counter-reset:jn}
+.rev-refs li{display:flex;flex-direction:column;gap:2px;counter-increment:jn;padding-left:28px;position:relative;font-size:1rem;line-height:1.4}
+.rev-refs li::before{content:counter(jn) ".";position:absolute;left:0;top:0;font-family:var(--display);font-weight:900;color:var(--oro)}
+.rev-refs .ref{color:var(--oro);font-size:.88rem;font-weight:700}
+
+/* ---- FINAL ---- */
+#p-final{gap:30px}
+.final-titulo{font-family:var(--display);font-weight:900;font-size:clamp(3rem,7vw,5.5rem);text-align:center;line-height:1}
+.final-titulo span{color:var(--oro)}
+.podio{display:flex;align-items:flex-end;gap:20px;justify-content:center;margin-bottom:10px}
+.podio-col{display:flex;flex-direction:column;align-items:center;gap:8px}
+.podio-nombre{font-weight:700;font-size:1.2rem;text-align:center;max-width:200px}
+.podio-pts{font-family:var(--display);font-weight:900;font-size:1.8rem;color:var(--oro)}
+.podio-base{border-radius:14px 14px 0 0;display:flex;align-items:flex-end;justify-content:center;padding-bottom:16px;font-family:var(--display);font-weight:900;font-size:3rem;color:rgba(255,255,255,.3)}
+.podio-1 .podio-base{width:180px;height:180px;background:linear-gradient(to top, #b8860b, #f5b82e)}
+.podio-2 .podio-base{width:160px;height:130px;background:linear-gradient(to top, #6b7280, #9ca3af)}
+.podio-3 .podio-base{width:160px;height:90px;background:linear-gradient(to top, #92400e, #d97706)}
+.lista-resto{display:flex;flex-direction:column;gap:8px;width:min(600px,90vw);max-height:200px;overflow-y:auto}
+.resto-fila{display:flex;align-items:center;gap:14px;background:var(--tarjeta);border-radius:14px;padding:12px 18px;animation:entrar .4s ease both}
+.resto-fila .pos{font-family:var(--display);font-weight:900;font-size:1.3rem;color:var(--crema-suave);width:2.5ch}
+.resto-fila .nom{flex:1;font-weight:700;font-size:1.05rem}
+.resto-fila .total{font-family:var(--display);font-weight:900;font-size:1.3rem;color:var(--oro)}
+
+/* ---- CONFETI ---- */
+#confeti{position:fixed;inset:0;pointer-events:none;z-index:100}
+.sync{position:fixed;bottom:10px;right:12px;font-size:.72rem;color:rgba(255,246,227,.3)}
+.sync.off{color:var(--coral)}
+@media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}}
+</style>
+</head>
+<body>
+<canvas id="confeti"></canvas>
+<span class="sync" id="sync">conectando...</span>
+
+<!-- PORTADA -->
+<section class="pantalla activa" id="p-portada">
+  <div class="portada-titulo">?Quien<br>soy<span class="q">?</span></div>
+  <p class="portada-sub">Conecta esta pantalla a la sala del presentador</p>
+  <div class="portada-input">
+    <input id="inp-code" maxlength="4" placeholder="ABCD" autocomplete="off">
+    <button id="btn-conectar">Conectar</button>
+  </div>
+  <p class="portada-err" id="err-code"></p>
+  <p class="portada-nota">Abre esta pagina en la TV o proyector</p>
+</section>
+
+<!-- LOBBY -->
+<section class="pantalla" id="p-lobby">
+  <div class="lobby-header">
+    <h2>Escanea el QR o ingresa el codigo</h2>
+    <p>para unirte desde tu celular</p>
+  </div>
+  <div class="lobby-cuerpo">
+    <div class="lobby-izq">
+      <div class="lobby-codigo" id="lob-codigo">----</div>
+      <div class="lobby-qr"><canvas id="qr-canvas"></canvas></div>
+      <p class="lobby-url" id="lob-url"></p>
+    </div>
+    <div class="lobby-der">
+      <h3>Jugadores (<span id="lob-n">0</span>)</h3>
+      <div class="jugadores-grid" id="lob-jugadores">
+        <p class="lobby-esperando">Esperando jugadores...</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- JUEGO -->
+<section class="pantalla" id="p-juego">
+  <div class="juego-cab">
+    <div class="juego-progreso" id="g-progreso"></div>
+    <div class="juego-insignia" id="g-insignia"></div>
+    <div class="juego-valor"><span class="num" id="g-valor">50</span><span class="lbl">puntos<br>en juego</span></div>
+  </div>
+  <div class="juego-banner" id="g-banner" style="display:none"></div>
+  <div class="juego-contenido">
+    <div class="juego-pistas" id="g-pistas"></div>
+    <div class="juego-lateral">
+      <div class="marcador-tv" id="g-marcador"></div>
+    </div>
+  </div>
+  <div id="g-revelacion"></div>
+</section>
+<div id="buzz-container"></div>
+
+<!-- FINAL -->
+<section class="pantalla" id="p-final">
+  <div class="final-titulo" id="f-titulo">Tenemos<br><span>campeones!</span></div>
+  <div class="podio" id="f-podio"></div>
+  <div class="lista-resto" id="f-resto"></div>
+</section>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+/* ================= QR Code Generator (minimal) ================= */
+const QR=(function(){
+  function QRCode(t,e){this.typeNumber=t;this.errorCorrectLevel=e;this.modules=null;this.moduleCount=0;this.dataCache=null;this.dataList=[]}
+  QRCode.prototype={addData:function(t){this.dataList.push(new QR8bitByte(t));this.dataCache=null},make:function(){if(this.typeNumber<1){let t=1;for(t=1;t<40;t++){let e=QRRSBlock.getRSBlocks(t,this.errorCorrectLevel),r=new QRBitBuffer;for(let n=0;n<this.dataList.length;n++)r.put(this.dataList[n].mode,4),r.put(this.dataList[n].getLength(),QRUtil.getLengthInBits(this.dataList[n].mode,t)),this.dataList[n].write(r);let o=0;for(let n=0;n<e.length;n++)o+=e[n].dataCount;if(r.getLengthInBits()<=8*o)break}this.typeNumber=t}this.makeImpl(!1,this.getBestMaskPattern())},getModule:function(t,e){return null!==this.modules[t][e]&&this.modules[t][e]},getModuleCount:function(){return this.moduleCount},
+  makeImpl:function(t,e){this.moduleCount=4*this.typeNumber+17;this.modules=new Array(this.moduleCount);for(let t=0;t<this.moduleCount;t++){this.modules[t]=new Array(this.moduleCount);for(let e=0;e<this.moduleCount;e++)this.modules[t][e]=null}this.setupPositionProbePattern(0,0);this.setupPositionProbePattern(this.moduleCount-7,0);this.setupPositionProbePattern(0,this.moduleCount-7);this.setupPositionAdjustPattern();this.setupTimingPattern();this.setupTypeInfo(t,e);this.typeNumber>=7&&this.setupTypeNumber(t);null==this.dataCache&&(this.dataCache=QRCode.createData(this.typeNumber,this.errorCorrectLevel,this.dataList));this.mapData(this.dataCache,e)},
+  setupPositionProbePattern:function(t,e){for(let r=-1;r<=7;r++){if(t+r<=-1||this.moduleCount<=t+r)continue;for(let o=-1;o<=7;o++){if(e+o<=-1||this.moduleCount<=e+o)continue;this.modules[t+r][e+o]=0<=r&&r<=6&&(0==o||6==o)||0<=o&&o<=6&&(0==r||6==r)||2<=r&&r<=4&&2<=o&&o<=4}}},
+  getBestMaskPattern:function(){let t=0,e=0;for(let r=0;r<8;r++){this.makeImpl(!0,r);let o=QRUtil.getLostPoint(this);(0==r||t>o)&&(t=o,e=r)}return e},
+  setupTimingPattern:function(){for(let t=8;t<this.moduleCount-8;t++)null==this.modules[t][6]&&(this.modules[t][6]=t%2==0),null==this.modules[6][t]&&(this.modules[6][t]=t%2==0)},
+  setupPositionAdjustPattern:function(){let t=QRUtil.getPatternPosition(this.typeNumber);for(let e=0;e<t.length;e++)for(let r=0;r<t.length;r++){let o=t[e],i=t[r];if(null!=this.modules[o][i])continue;for(let e=-2;e<=2;e++)for(let r=-2;r<=2;r++)this.modules[o+e][i+r]=-2==e||2==e||-2==r||2==r||0==e&&0==r}},
+  setupTypeNumber:function(t){let e=QRUtil.getBCHTypeNumber(this.typeNumber);for(let r=0;r<18;r++){let o=!t&&1==(e>>r&1);this.modules[Math.floor(r/3)][r%3+this.moduleCount-8-3]=o}for(let r=0;r<18;r++){let o=!t&&1==(e>>r&1);this.modules[r%3+this.moduleCount-8-3][Math.floor(r/3)]=o}},
+  setupTypeInfo:function(t,e){let r=this.errorCorrectLevel<<3|e,o=QRUtil.getBCHTypeInfo(r);for(let e=0;e<15;e++){let r=!t&&1==(o>>e&1);e<6?this.modules[e][8]=r:e<8?this.modules[e+1][8]=r:this.modules[this.moduleCount-15+e][8]=r}for(let e=0;e<15;e++){let r=!t&&1==(o>>e&1);e<8?this.modules[8][this.moduleCount-e-1]=r:e<9?this.modules[8][15-e-1+1]=r:this.modules[8][15-e-1]=r}this.modules[this.moduleCount-8][8]=!t},
+  mapData:function(t,e){let r=-1,o=this.moduleCount-1,i=7,n=0;for(let s=this.moduleCount-1;s>0;s-=2){6==s&&s--;for(;;){for(let a=0;a<2;a++)if(null==this.modules[o][s-a]){let l=!1;n<t.length&&(l=1==(t[n]>>>i&1));QRUtil.getMask(e,o,s-a)&&(l=!l);this.modules[o][s-a]=l;-1==--i&&(n++,i=7)}if((o+=r)<0||this.moduleCount<=o){o-=r;r=-r;break}}}}};
+  QRCode.createData=function(t,e,r){let o=QRRSBlock.getRSBlocks(t,e),i=new QRBitBuffer;for(let t=0;t<r.length;t++)i.put(r[t].mode,4),i.put(r[t].getLength(),QRUtil.getLengthInBits(r[t].mode,t+1)),r[t].write(i);let n=0;for(let t=0;t<o.length;t++)n+=o[t].dataCount;if(i.getLengthInBits()>8*n)throw"code length overflow";i.getLengthInBits()+4<=8*n&&i.put(0,4);for(;i.getLengthInBits()%8!=0;)i.putBit(!1);for(;;){if(i.getLengthInBits()>=8*n)break;if(i.put(236,8),i.getLengthInBits()>=8*n)break;i.put(17,8)}return QRCode.createBytes(i,o)};
+  QRCode.createBytes=function(t,e){let r=0,o=0,i=0,n=new Array(e.length),s=new Array(e.length);for(let a=0;a<e.length;a++){let l=e[a].dataCount,h=e[a].totalCount-l;o=Math.max(o,l);i=Math.max(i,h);n[a]=new Array(l);for(let e=0;e<n[a].length;e++)n[a][e]=255&t.buffer[e+r];r+=l;let u=QRUtil.getErrorCorrectPolynomial(h),c=new QRPolynomial(n[a],u.getLength()-1).mod(u);s[a]=new Array(u.getLength()-1);for(let t=0;t<s[a].length;t++){let e=t+c.getLength()-s[a].length;s[a][t]=e>=0?c.get(e):0}}let a=0;for(let t=0;t<e.length;t++)a+=e[t].totalCount;let l=new Array(a),h=0;for(let t=0;t<o;t++)for(let r=0;r<e.length;r++)t<n[r].length&&(l[h++]=n[r][t]);for(let t=0;t<i;t++)for(let r=0;r<e.length;r++)t<s[r].length&&(l[h++]=s[r][t]);return l};
+  function QR8bitByte(t){this.mode=4;this.data=t}QR8bitByte.prototype={getLength:function(){return this.data.length},write:function(t){for(let e=0;e<this.data.length;e++)t.put(this.data.charCodeAt(e),8)}};
+  let QRUtil={PATTERN_POSITION_TABLE:[[],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50],[6,30,54],[6,32,58],[6,34,62],[6,26,46,66],[6,26,48,70],[6,26,50,74],[6,30,54,78],[6,30,56,82],[6,30,58,86],[6,34,62,90],[6,28,50,72,94],[6,26,50,74,98],[6,30,54,78,102],[6,28,54,80,106],[6,32,58,84,110],[6,30,58,86,114],[6,34,62,90,118],[6,26,50,74,98,122],[6,30,54,78,102,126],[6,26,52,78,104,130],[6,30,56,82,108,134],[6,34,60,86,112,138],[6,30,58,86,114,142],[6,34,62,90,118,146],[6,30,54,78,102,126,150],[6,24,50,76,102,128,154],[6,28,54,80,106,132,158],[6,32,58,84,110,136,162],[6,26,54,82,110,138,166],[6,30,58,86,114,142,170]],
+  G15:1335,G18:7973,G15_MASK:21522,
+  getBCHTypeInfo:function(t){let e=t<<10;for(;QRUtil.getBCHDigit(e)-QRUtil.getBCHDigit(QRUtil.G15)>=0;)e^=QRUtil.G15<<QRUtil.getBCHDigit(e)-QRUtil.getBCHDigit(QRUtil.G15);return(t<<10|e)^QRUtil.G15_MASK},
+  getBCHTypeNumber:function(t){let e=t<<12;for(;QRUtil.getBCHDigit(e)-QRUtil.getBCHDigit(QRUtil.G18)>=0;)e^=QRUtil.G18<<QRUtil.getBCHDigit(e)-QRUtil.getBCHDigit(QRUtil.G18);return t<<12|e},
+  getBCHDigit:function(t){let e=0;for(;0!=t;)e++,t>>>=1;return e},
+  getPatternPosition:function(t){return QRUtil.PATTERN_POSITION_TABLE[t-1]},
+  getMask:function(t,e,r){switch(t){case 0:return(e+r)%2==0;case 1:return e%2==0;case 2:return r%3==0;case 3:return(e+r)%3==0;case 4:return(Math.floor(e/2)+Math.floor(r/3))%2==0;case 5:return e*r%2+e*r%3==0;case 6:return(e*r%2+e*r%3)%2==0;case 7:return(e*r%3+(e+r)%2)%2==0;default:throw"bad mask:"+t}},
+  getErrorCorrectPolynomial:function(t){let e=new QRPolynomial([1],0);for(let r=0;r<t;r++)e=e.multiply(new QRPolynomial([1,QRMath.gexp(r)],0));return e},
+  getLengthInBits:function(t,e){if(4==t)return e<10?8:16;throw"type:"+t},
+  getLostPoint:function(t){let e=t.getModuleCount(),r=0;for(let o=0;o<e;o++)for(let i=0;i<e;i++){let n=0,s=t.getModule(o,i);for(let r=-1;r<=1;r++){if(o+r<0||e<=o+r)continue;for(let a=-1;a<=1;a++){if(i+a<0||e<=i+a)continue;if(0==r&&0==a)continue;s==t.getModule(o+r,i+a)&&n++}}n>5&&(r+=3+n-5)}for(let o=0;o<e-1;o++)for(let i=0;i<e-1;i++){let r=0;t.getModule(o,i)&&r++,t.getModule(o+1,i)&&r++,t.getModule(o,i+1)&&r++,t.getModule(o+1,i+1)&&r++;if(0==r||4==r)return r+=40}for(let o=0;o<e;o++)for(let i=0;i<e-6;i++)t.getModule(o,i)&&!t.getModule(o,i+1)&&t.getModule(o,i+2)&&t.getModule(o,i+3)&&t.getModule(o,i+4)&&!t.getModule(o,i+5)&&t.getModule(o,i+6)&&(r+=40);for(let o=0;o<e;o++)for(let i=0;i<e-6;i++)t.getModule(i,o)&&!t.getModule(i+1,o)&&t.getModule(i+2,o)&&t.getModule(i+3,o)&&t.getModule(i+4,o)&&!t.getModule(i+5,o)&&t.getModule(i+6,o)&&(r+=40);let o=0;for(let r=0;r<e;r++)for(let i=0;i<e;i++)t.getModule(r,i)&&o++;return r+=10*(Math.abs(100*o/e/e-50)/5),r}};
+  let QRMath={glog:function(t){if(t<1)throw"glog("+t+")";return QRMath.LOG_TABLE[t]},gexp:function(t){for(;t<0;)t+=255;for(;t>=256;)t-=255;return QRMath.EXP_TABLE[t]},EXP_TABLE:new Array(256),LOG_TABLE:new Array(256)};
+  for(let t=0;t<8;t++)QRMath.EXP_TABLE[t]=1<<t;for(let t=8;t<256;t++)QRMath.EXP_TABLE[t]=QRMath.EXP_TABLE[t-4]^QRMath.EXP_TABLE[t-5]^QRMath.EXP_TABLE[t-6]^QRMath.EXP_TABLE[t-8];for(let t=0;t<255;t++)QRMath.LOG_TABLE[QRMath.EXP_TABLE[t]]=t;
+  function QRPolynomial(t,e){if(void 0==t.length)throw e+"/"+t.length;let r=0;for(;r<t.length&&0==t[r];)r++;this.num=new Array(t.length-r+e);for(let e=0;e<t.length-r;e++)this.num[e]=t[e+r]}
+  QRPolynomial.prototype={get:function(t){return this.num[t]},getLength:function(){return this.num.length},multiply:function(t){let e=new Array(this.getLength()+t.getLength()-1);for(let r=0;r<this.getLength();r++)for(let o=0;o<t.getLength();o++)e[r+o]^=QRMath.gexp(QRMath.glog(this.get(r))+QRMath.glog(t.get(o)));return new QRPolynomial(e,0)},mod:function(t){if(this.getLength()-t.getLength()<0)return this;let e=QRMath.glog(this.get(0))-QRMath.glog(t.get(0)),r=new Array(this.getLength());for(let t=0;t<this.getLength();t++)r[t]=this.get(t);for(let o=0;o<t.getLength();o++)r[o]^=QRMath.gexp(QRMath.glog(t.get(o))+e);return new QRPolynomial(r,0).mod(t)}};
+  let QRRSBlock={RS_BLOCK_TABLE:[[1,26,19],[1,26,16],[1,26,13],[1,26,9],[1,44,34],[1,44,28],[1,44,22],[1,44,16],[1,70,55],[1,70,44],[2,35,17],[2,35,13],[1,100,80],[2,50,32],[2,50,24],[4,25,9],[1,134,108],[2,67,43],[2,33,15,2,34,16],[2,33,11,2,34,12],[2,86,68],[4,43,27],[4,43,19],[4,43,15],[2,98,78],[4,49,31],[2,32,14,4,33,15],[4,39,13,1,40,14],[2,121,97],[2,60,38,2,61,39],[4,40,18,2,41,19],[4,40,14,2,41,15],[2,146,116],[3,58,36,2,59,37],[4,36,16,4,37,17],[4,36,12,4,37,13],[2,86,68,2,87,69],[4,69,43,1,70,44],[6,43,19,2,44,20],[6,43,15,2,44,16],[4,101,81],[1,80,50,4,81,51],[4,50,22,4,51,23],[3,36,12,8,37,13],[2,116,92,2,117,93],[6,58,36,2,59,37],[4,46,20,6,47,21],[7,42,14,4,43,15],[4,133,107],[8,59,37,1,60,38],[8,44,20,4,45,21],[12,33,11,4,34,12],[3,145,115,1,146,116],[4,64,40,5,65,41],[11,36,16,5,37,17],[11,36,12,5,37,13],[5,109,87,1,110,88],[5,65,41,5,66,42],[5,54,24,7,55,25],[11,36,12],[5,122,98,1,123,99],[7,73,45,3,74,46],[15,43,19,2,44,20],[3,45,15,13,46,16],[1,135,107,5,136,108],[10,74,46,1,75,47],[1,50,22,15,51,23],[2,42,14,17,43,15],[5,150,120,1,151,121],[9,69,43,4,70,44],[17,50,22,1,51,23],[2,42,14,19,43,15],[3,141,113,4,142,114],[3,70,44,11,71,45],[17,47,21,4,48,22],[9,39,13,16,40,14],[3,135,107,5,136,108],[3,67,41,13,68,42],[15,54,24,5,55,25],[15,43,15,10,44,16],[4,144,116,4,145,117],[17,68,42],[17,50,22,6,51,23],[19,46,16,6,47,17],[2,139,111,7,140,112],[17,74,46],[7,54,24,16,55,25],[34,37,13],[4,151,121,5,152,122],[4,75,47,14,76,48],[11,54,24,14,55,25],[16,45,15,14,46,16],[6,147,117,4,148,118],[6,73,45,14,74,46],[11,54,24,16,55,25],[30,46,16,2,47,17],[8,132,106,4,133,107],[8,75,47,13,76,48],[7,54,24,22,55,25],[22,45,15,13,46,16],[10,142,114,2,143,115],[19,74,46,4,75,47],[28,50,22,6,51,23],[33,46,16,4,47,17],[8,152,122,4,153,123],[22,73,45,3,74,46],[8,53,23,26,54,24],[12,45,15,28,46,16],[3,147,117,10,148,118],[3,73,45,23,74,46],[4,54,24,31,55,25],[11,45,15,31,46,16],[7,146,116,7,147,117],[21,73,45,7,74,46],[1,53,23,37,54,24],[19,45,15,26,46,16],[5,145,115,10,146,116],[19,75,47,10,76,48],[15,54,24,25,55,25],[23,45,15,25,46,16],[13,145,115,3,146,116],[2,74,46,29,75,47],[42,54,24,1,55,25],[23,45,15,28,46,16],[17,145,115],[10,74,46,23,75,47],[10,54,24,35,55,25],[19,45,15,35,46,16],[17,145,115,1,146,116],[14,74,46,21,75,47],[29,54,24,19,55,25],[11,45,15,46,46,16],[13,145,115,6,146,116],[14,74,46,23,75,47],[44,54,24,7,55,25],[59,46,16,1,47,17],[12,151,121,7,152,122],[12,75,47,26,76,48],[39,54,24,14,55,25],[22,45,15,41,46,16],[6,151,121,14,152,122],[6,75,47,34,76,48],[46,54,24,10,55,25],[2,45,15,64,46,16],[17,152,122,4,153,123],[29,74,46,14,75,47],[49,54,24,10,55,25],[24,45,15,46,46,16],[4,152,122,18,153,123],[13,74,46,32,75,47],[48,54,24,14,55,25],[42,45,15,32,46,16],[20,147,117,4,148,118],[40,75,47,7,76,48],[43,54,24,22,55,25],[10,45,15,67,46,16],[19,148,118,6,149,119],[18,75,47,31,76,48],[34,54,24,34,55,25],[20,45,15,61,46,16]],
+  getRSBlocks:function(t,e){let r=QRRSBlock.getRsBlockTable(t,e);if(void 0==r)throw"bad rs block @ typeNumber:"+t+"/errorCorrectLevel:"+e;let o=r.length/3,i=[];for(let t=0;t<o;t++){let e=r[3*t],n=r[3*t+1],s=r[3*t+2];for(let t=0;t<e;t++)i.push(new function(){this.totalCount=n;this.dataCount=s})}return i},
+  getRsBlockTable:function(t,e){switch(e){case 1:return QRRSBlock.RS_BLOCK_TABLE[4*(t-1)];case 0:return QRRSBlock.RS_BLOCK_TABLE[4*(t-1)+1];case 3:return QRRSBlock.RS_BLOCK_TABLE[4*(t-1)+2];case 2:return QRRSBlock.RS_BLOCK_TABLE[4*(t-1)+3]}}};
+  function QRBitBuffer(){this.buffer=[];this.length=0}QRBitBuffer.prototype={get:function(t){return 1==(this.buffer[Math.floor(t/8)]>>>7-t%8&1)},put:function(t,e){for(let r=0;r<e;r++)this.putBit(1==(t>>>e-r-1&1))},getLengthInBits:function(){return this.length},putBit:function(t){let e=Math.floor(this.length/8);this.buffer.length<=e&&this.buffer.push(0);t&&(this.buffer[e]|=128>>>this.length%8);this.length++}};
+  return{create:function(t){let e=new QRCode(0,1);e.addData(t);e.make();return e}};
+})();
+
+function drawQR(canvas, text, size){
+  const qr = QR.create(text);
+  const count = qr.getModuleCount();
+  const cellSize = Math.floor(size / count);
+  canvas.width = cellSize * count;
+  canvas.height = cellSize * count;
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "#1a1238";
+  for(let r = 0; r < count; r++)
+    for(let c = 0; c < count; c++)
+      if(qr.getModule(r, c))
+        ctx.fillRect(c * cellSize, r * cellSize, cellSize, cellSize);
+}
+
+/* ================= CONSTANTES ================= */
+const CATS = {
+  personaje:{ label:"Personajes", rev:"El personaje era" },
+  animal:{ label:"Animales", rev:"El animal era" },
+  lugar:{ label:"Lugares", rev:"El lugar era" },
+  objeto:{ label:"Objetos", rev:"El objeto era" },
+  libro:{ label:"Libros", rev:"El libro era" },
+  versiculo:{ label:"Versiculos", rev:"El versiculo era" }
+};
+const DIFS = {
+  principiante:{ label:"Principiante" },
+  cristiano:{ label:"Cristiano" },
+  maduro:{ label:"Maduro" },
+  exegeta:{ label:"Exegeta" }
+};
+const COLORES = ["#f5b82e","#ff6b5a","#5ee6b8","#8f7dff"];
+
+const $ = id => document.getElementById(id);
+function esc(s){ const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+const PANELES = ["p-portada","p-lobby","p-juego","p-final"];
+function ver(id){ PANELES.forEach(p => $(p).classList.toggle("activa", p === id)); }
+
+/* ---- sonidos ---- */
+let actx = null;
+function tono(f,d,t,v,c){
+  try{
+    if(!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = t || "sine"; o.frequency.value = f;
+    g.gain.setValueAtTime(0, actx.currentTime + (c||0));
+    g.gain.linearRampToValueAtTime(v || .18, actx.currentTime + (c||0) + .015);
+    g.gain.exponentialRampToValueAtTime(.001, actx.currentTime + (c||0) + d);
+    o.connect(g); g.connect(actx.destination);
+    o.start(actx.currentTime + (c||0)); o.stop(actx.currentTime + (c||0) + d + .05);
+  }catch(e){}
+}
+const snd = {
+  buzz(){ tono(740,.18,"square",.16); tono(990,.18,"square",.14,.1); },
+  ok(){ tono(523,.14,"sine",.2,0); tono(659,.14,"sine",.2,.12); tono(784,.22,"sine",.22,.24); },
+  no(){ tono(160,.3,"sawtooth",.16,0); tono(120,.35,"sawtooth",.14,.12); },
+  reveal(){ tono(392,.3,"sine",.16,0); tono(587,.4,"sine",.18,.1); },
+  fin(){ [523,659,784,1047].forEach((f,i)=>tono(f,.35,"sine",.2,i*.16)); tono(1319,.6,"sine",.22,.7); }
+};
+
+/* ---- confeti ---- */
+const canvas = $("confeti"), ctx2 = canvas.getContext("2d");
+let parts = [], anim = null;
+function ajusta(){ canvas.width = innerWidth; canvas.height = innerHeight; }
+addEventListener("resize", ajusta); ajusta();
+function confeti(n){
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const cs = ["#f5b82e","#ff6b5a","#5ee6b8","#8f7dff","#fff6e3"];
+  for(let i=0;i<(n||120);i++) parts.push({x:Math.random()*canvas.width,y:-20-Math.random()*120,vx:(Math.random()-.5)*3.2,vy:2.5+Math.random()*3.5,r:4+Math.random()*5,rot:Math.random()*Math.PI,vr:(Math.random()-.5)*.25,c:cs[Math.floor(Math.random()*cs.length)],vida:130+Math.random()*60});
+  if(!anim) animar();
+}
+function animar(){
+  ctx2.clearRect(0,0,canvas.width,canvas.height);
+  parts = parts.filter(p => p.vida > 0 && p.y < canvas.height + 30);
+  parts.forEach(p => { p.x+=p.vx; p.y+=p.vy; p.rot+=p.vr; p.vida--; ctx2.save(); ctx2.translate(p.x,p.y); ctx2.rotate(p.rot); ctx2.fillStyle=p.c; ctx2.fillRect(-p.r/2,-p.r/2,p.r,p.r*.62); ctx2.restore(); });
+  if(parts.length) anim = requestAnimationFrame(animar);
+  else { anim = null; ctx2.clearRect(0,0,canvas.width,canvas.height); }
+}
+
+/* ================= ESTADO ================= */
+const socket = io();
+let est = null, cod = null;
+let buzzAnterior = null, resueltoAnterior = false, ronAnterior = -1;
+let jugadoresAnterior = 0;
+
+socket.on("connect", () => { $("sync").textContent = "conectado"; $("sync").classList.remove("off"); });
+socket.on("disconnect", () => { $("sync").textContent = "sin conexion"; $("sync").classList.add("off"); });
+socket.on("sala_cerrada", () => { ver("p-portada"); est = null; cod = null; });
+
+/* ---- auto-connect desde URL ---- */
+const params = new URLSearchParams(location.search);
+if(params.get("code")){
+  $("inp-code").value = params.get("code").toUpperCase();
+  setTimeout(() => $("btn-conectar").click(), 300);
+}
+
+$("btn-conectar").addEventListener("click", () => {
+  const c = $("inp-code").value.trim().toUpperCase();
+  if(c.length !== 4){ $("err-code").textContent = "El codigo tiene 4 letras."; return; }
+  $("err-code").textContent = "Conectando...";
+  socket.emit("pantalla", { code: c }, res => {
+    if(!res || res.error){ $("err-code").textContent = (res && res.error) || "Error de conexion."; return; }
+    cod = c;
+    est = res.estado;
+    $("err-code").textContent = "";
+    renderTodo();
+  });
+});
+$("inp-code").addEventListener("keydown", e => { if(e.key === "Enter") $("btn-conectar").click(); });
+
+socket.on("estado", e => {
+  const prevFase = est ? est.fase : null;
+  est = e;
+
+  if(e.ronda){
+    if(e.ronda.buzz && JSON.stringify(e.ronda.buzz) !== buzzAnterior) snd.buzz();
+    buzzAnterior = e.ronda.buzz ? JSON.stringify(e.ronda.buzz) : null;
+    if(e.ronda.resuelto && !resueltoAnterior){
+      if(e.ronda.ganador){ snd.ok(); confeti(e.ronda.doble ? 180 : 100); } else snd.reveal();
+    }
+    resueltoAnterior = e.ronda.resuelto;
+  }
+  if(e.fase === "final" && ronAnterior !== -2){ snd.fin(); confeti(250); ronAnterior = -2; }
+
+  const jugs = Object.values(e.jugadores).length;
+  if(e.fase === "lobby" && jugs > jugadoresAnterior && jugadoresAnterior > 0) tono(660,.12,"sine",.14);
+  jugadoresAnterior = jugs;
+
+  renderTodo();
+});
+
+function renderTodo(){
+  if(!est) return;
+  if(est.fase === "lobby") renderLobby();
+  else if(est.fase === "jugando") renderJuego();
+  else if(est.fase === "final") renderFinal();
+}
+
+/* ================= LOBBY ================= */
+function renderLobby(){
+  ver("p-lobby");
+  $("lob-codigo").textContent = cod;
+  const url = location.origin;
+  $("lob-url").textContent = url;
+  drawQR($("qr-canvas"), url, 220);
+
+  const jugs = Object.values(est.jugadores);
+  $("lob-n").textContent = jugs.length;
+  const cont = $("lob-jugadores");
+
+  if(jugs.length === 0){
+    cont.innerHTML = '<p class="lobby-esperando">Esperando jugadores...</p>';
+    return;
+  }
+
+  cont.innerHTML = "";
+  if(est.modo === "equipos"){
+    est.equipos.forEach((eq, i) => {
+      const miembros = jugs.filter(j => j.e === eq);
+      const g = document.createElement("div");
+      g.className = "grupo-eq";
+      g.innerHTML = '<div class="grupo-eq-titulo"><span class="dot" style="background:' + COLORES[i] + '"></span>' + esc(eq) + ' (' + miembros.length + ')</div>' +
+        '<div class="jugadores-grid">' + miembros.map(j => '<span class="jug-tag">' + esc(j.n) + '</span>').join("") + '</div>';
+      cont.appendChild(g);
+    });
+  } else {
+    jugs.forEach(j => {
+      const span = document.createElement("span");
+      span.className = "jug-tag";
+      span.textContent = j.n;
+      cont.appendChild(span);
+    });
+  }
+}
+
+/* ================= JUEGO ================= */
+function renderJuego(){
+  ver("p-juego");
+  const r = est.ronda;
+  if(!r) return;
+
+  $("g-progreso").textContent = "TARJETA " + (r.i + 1) + " DE " + r.total;
+  $("g-valor").textContent = r.valor;
+
+  const cat = CATS[r.c] || {label:r.c};
+  const dif = DIFS[r.d] || {label:r.d};
+  $("g-insignia").innerHTML = '<span>' + esc(cat.label) + '</span><span class="dif">' + esc(dif.label) + '</span>';
+
+  const ban = $("g-banner");
+  if(r.doble){ ban.textContent = "RONDA FINAL -- PUNTOS Y PENALIZACIONES DOBLES"; ban.style.display = "block"; }
+  else ban.style.display = "none";
+
+  // Pistas
+  $("g-pistas").innerHTML = r.pistas.map((p, j) =>
+    '<div class="pista" style="animation-delay:' + (j * .05) + 's"><span class="n">' + (j+1) + '.</span><span>' + esc(p) + '</span></div>'
+  ).join("");
+
+  // Buzz overlay
+  const bc = $("buzz-container");
+  if(r.buzz && !r.resuelto){
+    bc.innerHTML = '<div class="buzz-overlay"><div class="buzz-card"><div class="buzz-label">QUIERE RESPONDER</div>' +
+      '<div class="buzz-nombre">' + esc(r.buzz.n) + '</div>' +
+      (est.modo === "equipos" && r.buzz.e ? '<div class="buzz-equipo">' + esc(r.buzz.e) + '</div>' : '') +
+      '</div></div>';
+  } else {
+    bc.innerHTML = "";
+  }
+
+  // Revelacion
+  const revCont = $("g-revelacion");
+  if(r.resuelto && r.rev){
+    bc.innerHTML = "";
+    const rv = r.rev;
+    let gano;
+    if(r.ganador) gano = '<div class="rev-gano">+' + r.ganador.pts + ' puntos para ' + esc(r.ganador.n) + (r.ganador.e ? ' (' + esc(r.ganador.e) + ')' : '') + '</div>';
+    else gano = '<div class="rev-gano" style="color:var(--crema-suave)">Nadie sumo esta vez</div>';
+    const items = rv.pistas.map((p, j) =>
+      '<li><span>' + esc(p) + '</span>' + (rv.refs && rv.refs[j] ? '<span class="ref">' + esc(rv.refs[j]) + '</span>' : '') + '</li>'
+    ).join("");
+    revCont.innerHTML = '<div class="rev-card"><div class="rev-es">' + esc(rv.catRev) + '</div>' +
+      '<div class="rev-nombre">' + esc(rv.nombre) + '</div>' +
+      '<div class="rev-verso">' + esc(rv.verso) + '</div>' + gano +
+      (items ? '<div class="rev-refs"><div class="rev-refs-titulo">De donde sale cada pista</div><ol>' + items + '</ol></div>' : '') +
+      '</div>';
+  } else {
+    revCont.innerHTML = "";
+  }
+
+  // Marcador lateral
+  renderMarcador();
+}
+
+function renderMarcador(){
+  const cont = $("g-marcador");
+  let html = '<h4>RANKING</h4>';
+  if(est.modo === "equipos"){
+    const sorted = [...est.equipos].sort((a,b) => est.puntosEquipo[b] - est.puntosEquipo[a]);
+    const max = est.puntosEquipo[sorted[0]] || 0;
+    sorted.forEach((eq, i) => {
+      const ci = est.equipos.indexOf(eq);
+      const pts = est.puntosEquipo[eq];
+      html += '<div class="marc-fila' + (pts === max && max > 0 ? ' lider' : '') + '">' +
+        '<span class="dot" style="background:' + COLORES[ci] + '"></span>' +
+        '<span class="nom">' + esc(eq) + '</span>' +
+        '<span class="pts' + (pts < 0 ? ' neg' : '') + '">' + pts + '</span></div>';
+    });
+  } else {
+    const jugs = Object.values(est.jugadores).sort((a,b) => b.p - a.p);
+    const max = jugs.length ? jugs[0].p : 0;
+    jugs.forEach(j => {
+      html += '<div class="marc-fila' + (j.p === max && max > 0 ? ' lider' : '') + '">' +
+        '<span class="nom">' + esc(j.n) + '</span>' +
+        '<span class="pts' + (j.p < 0 ? ' neg' : '') + '">' + j.p + '</span></div>';
+    });
+  }
+  cont.innerHTML = html;
+}
+
+/* ================= FINAL ================= */
+function renderFinal(){
+  ver("p-final");
+  const rk = est.ranking || [];
+  $("f-titulo").innerHTML = 'Tenemos<br><span>' + (est.modo === "equipos" ? "equipo campeon!" : "campeones!") + '</span>';
+
+  // Podio (top 3)
+  const podio = $("f-podio");
+  const order = [1, 0, 2]; // 2do, 1ro, 3ro (visual)
+  let podioHTML = "";
+  order.forEach(pos => {
+    if(!rk[pos]) return;
+    const cls = "podio-col podio-" + (pos + 1);
+    const medal = pos === 0 ? "🏆" : pos === 1 ? "🥈" : "🥉";
+    podioHTML += '<div class="' + cls + '">' +
+      '<div class="podio-nombre">' + medal + ' ' + esc(rk[pos].n) + '</div>' +
+      '<div class="podio-pts">' + rk[pos].p + ' pts</div>' +
+      '<div class="podio-base">' + (pos + 1) + '</div></div>';
+  });
+  podio.innerHTML = podioHTML;
+
+  // Resto
+  const resto = $("f-resto");
+  if(rk.length > 3){
+    resto.innerHTML = rk.slice(3).map((x, i) =>
+      '<div class="resto-fila" style="animation-delay:' + (i * .1) + 's">' +
+      '<span class="pos">' + (i + 4) + '</span>' +
+      '<span class="nom">' + esc(x.n) + '</span>' +
+      '<span class="total">' + x.p + '</span></div>'
+    ).join("");
+  } else {
+    resto.innerHTML = "";
+  }
+}
+</script>
+</body>
+</html>
