@@ -10,7 +10,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static(path.join(__dirname, "public"), { maxAge: 0, etag: false }));
 
 const PUNTOS = [50, 40, 30, 20, 10];
 const salas = new Map();          // code -> sala

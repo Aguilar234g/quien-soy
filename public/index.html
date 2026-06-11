@@ -906,6 +906,7 @@ function parseCSVLine(line){
   fields.push(cur.trim());
   return fields;
 }
+function stripAccents(s){ return s.normalize("NFD").replace(/[̀-ͯ]/g,""); }
 function parseCustomCards(text){
   const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l && !l.match(/^nombre[,;\t]/i));
   const cards = [];
@@ -915,8 +916,8 @@ function parseCustomCards(text){
     const [nombre, cat, dif, verso, ...pistas] = f;
     if(!nombre || pistas.filter(p=>p).length < 3) continue;
     cards.push({
-      c: cat.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/\s+/g,"_") || "personalizado",
-      d: dif.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"") || "intermedio",
+      c: stripAccents(cat.toLowerCase()).replace(/\s+/g,"_") || "personalizado",
+      d: stripAccents(dif.toLowerCase()) || "intermedio",
       nombre, verso: verso || "",
       pistas: [pistas[0]||"",pistas[1]||"",pistas[2]||"",pistas[3]||pistas[2]||"",pistas[4]||pistas[3]||pistas[2]||""],
       custom: true
