@@ -1021,6 +1021,31 @@ function refreshPool(){
   $("contador-pool").classList.toggle("vacio", n === 0);
 }
 
+/* ---- randomización fuerte + historial anti-repetición ---- */
+function shuffleCrypto(arr){
+  const a = [...arr];
+  if(a.length < 2) return a;
+  const r = new Uint32Array(a.length);
+  crypto.getRandomValues(r);
+  for(let i = a.length - 1; i > 0; i--){ const j = r[i] % (i + 1); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+const HIST_KEY = "qs_hist";
+const HIST_MAX = 80;
+function getHist(){ try{ return JSON.parse(localStorage.getItem(HIST_KEY)) || []; }catch(e){ return []; } }
+function addHist(nombres){
+  let h = getHist();
+  h.push(...nombres);
+  if(h.length > HIST_MAX) h = h.slice(-HIST_MAX);
+  try{ localStorage.setItem(HIST_KEY, JSON.stringify(h)); }catch(e){}
+}
+function smartShuffle(cards){
+  const hist = new Set(getHist());
+  const fresh = cards.filter(c => !hist.has(c.nombre));
+  const seen = cards.filter(c => hist.has(c.nombre));
+  return [...shuffleCrypto(fresh), ...shuffleCrypto(seen)];
+}
+
 /* ---- rol ---- */
 $("btn-rol-host").addEventListener("click", () => ver("p-config"));
 $("btn-rol-jugador").addEventListener("click", () => ver("p-unirse"));
@@ -1041,9 +1066,8 @@ let prMazo = [], prIdx = 0, prPistas = 0, prScore = 0, prResuelto = false, prBuz
 $("btn-rol-practica").addEventListener("click", () => {
   const cards = BASE.filter(p => p.c === "personaje" && p.d === "principiante");
   if(cards.length === 0) return;
-  prMazo = [...cards];
-  for(let i = prMazo.length-1; i > 0; i--){ const j = Math.floor(Math.random()*(i+1)); [prMazo[i],prMazo[j]] = [prMazo[j],prMazo[i]]; }
-  prMazo = prMazo.slice(0, 5);
+  prMazo = smartShuffle(cards).slice(0, 5);
+  addHist(prMazo.map(m => m.nombre));
   prIdx = 0; prScore = 0; prPistas = 0; prResuelto = false; prBuzz = false;
   renderPractica();
   ver("p-practica");
@@ -1189,14 +1213,14 @@ $("btn-crear").addEventListener("click", () => {
   const lista = pool();
   if(lista.length === 0){ $("err-config").textContent = "Ninguna tarjeta disponible. Agrega tarjetas o cambia la selección."; return; }
   $("err-config").textContent = "";
-  const barajadas = [...lista];
-  for(let i = barajadas.length-1; i > 0; i--){ const j = Math.floor(Math.random()*(i+1)); [barajadas[i],barajadas[j]] = [barajadas[j],barajadas[i]]; }
+  const barajadas = smartShuffle(lista);
   const n = dur === "all" ? barajadas.length : Math.min(parseInt(dur,10), barajadas.length);
   const mazo = barajadas.slice(0, n).map(p => ({
     c:p.c, d:p.d, nombre:p.nombre, verso:p.verso, pistas:p.pistas,
     refs: REFS[p.nombre] || [],
     catRev: (CATS[p.c] && CATS[p.c].rev) || ("La respuesta era")
   }));
+  addHist(mazo.map(m => m.nombre));
   socket.emit("crear", {
     config: { modo, equipos: NOMBRES_EQ.slice(0, nEq), pen, doble },
     mazo
