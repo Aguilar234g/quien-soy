@@ -14,6 +14,7 @@ app.use(express.static(path.join(__dirname, "public")));
 const PUNTOS = [50, 40, 30, 20, 10];
 const salas = new Map();          // code -> sala
 const conexiones = new Map();     // socket.id -> { code, playerId, esHost }
+const pantallasEsperando = new Set(); // socket.ids de pantallas sin sala
 
 function genCodigo(){
   const L = "ABCDEFGHJKLMNPQRSTUVWXYZ";
@@ -113,9 +114,32 @@ io.on("connection", socket => {
     ack && ack({ ok: true, estado: sala.est });
   });
 
+  socket.on("pantalla_esperar", (_, ack) => {
+    pantallasEsperando.add(socket.id);
+    ack && ack({ ok: true });
+  });
+
+  socket.on("transmitir", (_, ack) => {
+    const con = conexiones.get(socket.id);
+    if(!con || !con.esHost) return ack && ack({ error: "No eres host." });
+    const sala = salas.get(con.code);
+    if(!sala) return ack && ack({ error: "Sala no encontrada." });
+    let enviadas = 0;
+    for(const sid of pantallasEsperando){
+      const s = io.sockets.sockets.get(sid);
+      if(s){
+        s.emit("transmitir_sala", { code: sala.code });
+        enviadas++;
+      }
+    }
+    if(enviadas === 0) return ack && ack({ error: "No hay pantallas esperando. Abre /pantalla.html en la TV primero." });
+    ack && ack({ ok: true, pantallas: enviadas });
+  });
+
   socket.on("pantalla", ({ code }, ack) => {
     const sala = salas.get((code || "").toUpperCase());
     if(!sala) return ack && ack({ error: "No existe una sala con ese código." });
+    pantallasEsperando.delete(socket.id);
     conexiones.set(socket.id, { code: sala.code, esHost: false, esPantalla: true });
     socket.join(sala.code);
     ack && ack({ ok: true, estado: sala.est });
@@ -211,7 +235,7 @@ io.on("connection", socket => {
     }
   });
 
-  socket.on("disconnect", () => { conexiones.delete(socket.id); });
+  socket.on("disconnect", () => { conexiones.delete(socket.id); pantallasEsperando.delete(socket.id); });
 });
 
 // limpieza de salas de más de 4 horas

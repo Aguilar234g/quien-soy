@@ -31,7 +31,13 @@ body{font-family:var(--cuerpo);background:radial-gradient(1400px 900px at 50% -5
 .portada-input button{padding:18px 36px;border-radius:18px;font-size:1.3rem;font-weight:700;background:var(--coral);color:#fff;border:none;cursor:pointer;font-family:var(--cuerpo);transition:transform .12s}
 .portada-input button:hover{transform:translateY(-2px)}
 .portada-err{color:var(--coral);font-size:1.1rem;font-weight:700;min-height:1.4em}
-.portada-nota{color:var(--crema-suave);font-size:1rem;opacity:.6}
+.portada-nota{color:var(--crema-suave);font-size:1rem;opacity:.6;text-align:center}
+.cast-icon{font-size:4rem;animation:pulsar 2s ease-in-out infinite;text-align:center;margin:10px 0}
+@keyframes pulsar{0%,100%{opacity:.4;transform:scale(1)}50%{opacity:1;transform:scale(1.15)}}
+.btn-manual{margin-top:10px;padding:10px 24px;border-radius:12px;font-size:.9rem;font-weight:700;background:transparent;color:var(--crema-suave);border:1px solid var(--tarjeta-claro);cursor:pointer;font-family:var(--cuerpo);transition:border-color .2s}
+.btn-manual:hover{border-color:var(--oro);color:var(--oro)}
+#modo-espera{display:flex;flex-direction:column;align-items:center;gap:6px}
+#modo-manual{display:flex;flex-direction:column;align-items:center;gap:12px}
 
 /* ---- LOBBY ---- */
 #p-lobby{justify-content:flex-start;padding-top:30px;gap:20px}
@@ -131,16 +137,23 @@ body{font-family:var(--cuerpo);background:radial-gradient(1400px 900px at 50% -5
 <canvas id="confeti"></canvas>
 <span class="sync" id="sync">conectando...</span>
 
-<!-- PORTADA -->
+<!-- PORTADA / ESPERANDO -->
 <section class="pantalla activa" id="p-portada">
-  <div class="portada-titulo">?Quien<br>soy<span class="q">?</span></div>
-  <p class="portada-sub">Conecta esta pantalla a la sala del presentador</p>
-  <div class="portada-input">
-    <input id="inp-code" maxlength="4" placeholder="ABCD" autocomplete="off">
-    <button id="btn-conectar">Conectar</button>
+  <div class="portada-titulo">¿Quién<br>soy<span class="q">?</span></div>
+  <div id="modo-espera">
+    <p class="portada-sub" id="espera-msg">Esperando al presentador…</p>
+    <div class="cast-icon" id="cast-anim">📺</div>
+    <p class="portada-nota">El presentador puede conectar esta pantalla con el botón «Transmitir»</p>
   </div>
+  <div id="modo-manual" style="display:none">
+    <p class="portada-sub">O ingresa el código manualmente:</p>
+    <div class="portada-input">
+      <input id="inp-code" maxlength="4" placeholder="ABCD" autocomplete="off">
+      <button id="btn-conectar">Conectar</button>
+    </div>
+  </div>
+  <button class="btn-manual" id="btn-toggle-manual">Conectar manualmente</button>
   <p class="portada-err" id="err-code"></p>
-  <p class="portada-nota">Abre esta pagina en la TV o proyector</p>
 </section>
 
 <!-- LOBBY -->
@@ -312,28 +325,46 @@ let est = null, cod = null;
 let buzzAnterior = null, resueltoAnterior = false, ronAnterior = -1;
 let jugadoresAnterior = 0;
 
-socket.on("connect", () => { $("sync").textContent = "conectado"; $("sync").classList.remove("off"); });
+socket.on("connect", () => {
+  $("sync").textContent = "conectado"; $("sync").classList.remove("off");
+  if(!cod) socket.emit("pantalla_esperar", null, () => {});
+});
 socket.on("disconnect", () => { $("sync").textContent = "sin conexion"; $("sync").classList.add("off"); });
-socket.on("sala_cerrada", () => { ver("p-portada"); est = null; cod = null; });
+socket.on("sala_cerrada", () => { ver("p-portada"); est = null; cod = null; socket.emit("pantalla_esperar", null, () => {}); });
 
-/* ---- auto-connect desde URL ---- */
+function conectarSala(code){
+  socket.emit("pantalla", { code }, res => {
+    if(!res || res.error){ $("err-code").textContent = (res && res.error) || "Error de conexion."; return; }
+    cod = code;
+    est = res.estado;
+    $("err-code").textContent = "";
+    renderTodo();
+  });
+}
+
+/* ---- auto-connect: el presentador pulsa "Transmitir" ---- */
+socket.on("transmitir_sala", ({ code }) => {
+  $("espera-msg").textContent = "Conectando...";
+  conectarSala(code);
+});
+
+/* ---- auto-connect desde URL (?code=XXXX) ---- */
 const params = new URLSearchParams(location.search);
 if(params.get("code")){
-  $("inp-code").value = params.get("code").toUpperCase();
-  setTimeout(() => $("btn-conectar").click(), 300);
+  setTimeout(() => conectarSala(params.get("code").toUpperCase()), 300);
 }
+
+/* ---- toggle manual ---- */
+$("btn-toggle-manual").addEventListener("click", () => {
+  const m = $("modo-manual");
+  m.style.display = m.style.display === "none" ? "flex" : "none";
+});
 
 $("btn-conectar").addEventListener("click", () => {
   const c = $("inp-code").value.trim().toUpperCase();
   if(c.length !== 4){ $("err-code").textContent = "El codigo tiene 4 letras."; return; }
   $("err-code").textContent = "Conectando...";
-  socket.emit("pantalla", { code: c }, res => {
-    if(!res || res.error){ $("err-code").textContent = (res && res.error) || "Error de conexion."; return; }
-    cod = c;
-    est = res.estado;
-    $("err-code").textContent = "";
-    renderTodo();
-  });
+  conectarSala(c);
 });
 $("inp-code").addEventListener("keydown", e => { if(e.key === "Enter") $("btn-conectar").click(); });
 

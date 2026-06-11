@@ -117,6 +117,8 @@ input.codigo{text-transform:uppercase;letter-spacing:.4em;text-align:center;font
 .fila-final .pos{font-family:var(--display);font-weight:900;font-size:1.4rem;color:var(--oro);width:2.2ch}
 .fila-final .nom{flex:1;font-weight:700;font-size:1.1rem}
 .fila-final .total{font-family:var(--display);font-weight:900;font-size:1.4rem;color:var(--oro)}
+.btn-tv{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:8px;padding:13px 28px;border-radius:14px;font-size:1rem;font-weight:700;background:linear-gradient(135deg,#3b2e76,#2f2460);color:var(--menta);border:2px solid var(--menta);transition:transform .12s, box-shadow .12s;cursor:pointer;font-family:var(--cuerpo)}
+.btn-tv:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(94,230,184,.25)}
 .sync{position:fixed;bottom:10px;right:12px;font-size:.7rem;color:rgba(255,246,227,.35)}
 .sync.off{color:var(--coral)}
 #confeti{position:fixed;inset:0;pointer-events:none;z-index:100}
@@ -176,6 +178,7 @@ input.codigo{text-transform:uppercase;letter-spacing:.4em;text-align:center;font
   <p class="sub" style="margin-top:6px">Comparte este código con los jugadores:</p>
   <div class="codigo-grande" id="lobby-codigo">····</div>
   <p class="sub" id="lobby-url"></p>
+  <button class="btn-tv" id="btn-tv">📺 Transmitir a pantalla</button>
   <div class="caja">
     <h2>Jugadores conectados (<span id="lobby-n">0</span>)</h2>
     <div class="lista-jug" id="lobby-lista"><p class="nota">Esperando jugadores…</p></div>
@@ -638,6 +641,22 @@ $("btn-crear").addEventListener("click", () => {
     $("lobby-codigo").textContent = cod;
     $("lobby-url").textContent = location.origin;
     ver("p-lobby");
+  });
+});
+$("btn-tv").addEventListener("click", () => {
+  if(!cod) return;
+  $("btn-tv").disabled = true;
+  $("btn-tv").textContent = "📺 Conectando…";
+  socket.emit("transmitir", null, res => {
+    if(!res || res.error){
+      $("btn-tv").disabled = false;
+      $("btn-tv").textContent = "📺 Transmitir a pantalla";
+      alert(res ? res.error : "Error de conexión.");
+      return;
+    }
+    $("btn-tv").textContent = "📺 ¡Pantalla conectada!";
+    $("btn-tv").style.borderColor = "var(--menta)";
+    $("btn-tv").style.color = "var(--menta)";
   });
 });
 $("btn-empezar").addEventListener("click", () => socket.emit("cmd", { a:"empezar" }));
