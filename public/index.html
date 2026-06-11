@@ -139,6 +139,8 @@ input.codigo{text-transform:uppercase;letter-spacing:.4em;text-align:center;font
 .zona-custom .tab-custom button.sel{background:var(--oro);color:var(--noche-prof)}
 .custom-preview{margin-top:10px;font-size:.82rem;font-weight:700;color:var(--menta);text-align:center}
 .custom-preview.error{color:var(--coral)}
+.btn-terminar{margin-top:18px;width:min(900px,100%);padding:12px 0;border-radius:13px;font-size:.88rem;font-weight:700;background:transparent;color:rgba(255,107,90,.6);border:1px solid rgba(255,107,90,.25);transition:background .2s,color .2s}
+.btn-terminar:hover{background:rgba(255,107,90,.12);color:var(--coral)}
 </style>
 </head>
 <body>
@@ -286,6 +288,7 @@ Napoleón Bonaparte,personaje,avanzado,"La victoria pertenece al más perseveran
     <button class="c-siguiente" id="btn-siguiente">Siguiente tarjeta</button>
   </div>
   <div class="marcador" id="h-marcador"></div>
+  <button class="btn-terminar" id="btn-terminar">⏹ Terminar partida</button>
 </section>
 
 <section class="pantalla centrada" id="p-unirse">
@@ -1098,6 +1101,10 @@ $("btn-ok").addEventListener("click", () => socket.emit("cmd", { a:"correcto" })
 $("btn-no").addEventListener("click", () => socket.emit("cmd", { a:"incorrecto" }));
 $("btn-siguiente").addEventListener("click", () => socket.emit("cmd", { a:"siguiente" }));
 $("btn-reiniciar").addEventListener("click", () => { socket.emit("cmd", { a:"cerrar" }); location.href = location.pathname; });
+$("btn-terminar").addEventListener("click", () => {
+  if(confirm("¿Terminar la partida ahora? Se mostrará el ranking con los puntos actuales."))
+    socket.emit("cmd", { a:"terminar" });
+});
 
 /* ---- render host ---- */
 function renderHost(){

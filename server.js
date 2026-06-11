@@ -268,6 +268,13 @@ io.on("connection", socket => {
       }
       guardarEstado();
     }
+    if(a === "terminar"){
+      e.fase = "final";
+      e.ranking = calcularRanking(sala);
+      e.ronda = null;
+      publicar(sala);
+      guardarEstado();
+    }
     if(a === "cerrar"){
       io.to(sala.code).emit("sala_cerrada");
       salas.delete(sala.code);
