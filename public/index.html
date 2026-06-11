@@ -1115,7 +1115,9 @@ function renderHost(){
   ver("p-host");
   $("h-progreso").textContent = "Tarjeta " + (r.i + 1) + " de " + r.total;
   $("h-valor").textContent = r.valor;
-  $("h-insignia").innerHTML = '<span>' + CATS[r.c].label + '</span><span class="dif">' + DIFS[r.d].label + '</span>';
+  const catLabel = CATS[r.c] ? CATS[r.c].label : r.c.charAt(0).toUpperCase() + r.c.slice(1);
+  const difLabel = DIFS[r.d] ? DIFS[r.d].label : r.d.charAt(0).toUpperCase() + r.d.slice(1);
+  $("h-insignia").innerHTML = '<span>' + esc(catLabel) + '</span><span class="dif">' + esc(difLabel) + '</span>';
   const ban = $("h-banner");
   if(r.doble){ ban.textContent = "🔥 Ronda final — ¡puntos y penalizaciones dobles!"; ban.style.display = "block"; }
   else ban.style.display = "none";
@@ -1249,7 +1251,9 @@ function renderJugador(){
   pistasPrevias = r.pistas.length;
   $("j-progreso").textContent = "Tarjeta " + (r.i + 1) + " de " + r.total;
   $("j-valor").textContent = r.valor;
-  $("j-insignia").innerHTML = '<span>' + CATS[r.c].label + '</span><span class="dif">' + DIFS[r.d].label + '</span>';
+  const jCatLabel = CATS[r.c] ? CATS[r.c].label : r.c.charAt(0).toUpperCase() + r.c.slice(1);
+  const jDifLabel = DIFS[r.d] ? DIFS[r.d].label : r.d.charAt(0).toUpperCase() + r.d.slice(1);
+  $("j-insignia").innerHTML = '<span>' + esc(jCatLabel) + '</span><span class="dif">' + esc(jDifLabel) + '</span>';
   const ban = $("j-banner");
   if(r.doble){ ban.textContent = "🔥 Ronda final x2"; ban.style.display = "block"; } else ban.style.display = "none";
   $("j-pistas").innerHTML = pintaPistas(r) + (r.resuelto ? pintaRevelacion(r) : "");
