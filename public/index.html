@@ -888,7 +888,7 @@ socket.on("estado", e => {
   }
 });
 
-/* ---- CSV parser (maneja comillas, comas internas) ---- */
+/* ---- CSV/TSV parser robusto ---- */
 function parseCSVLine(line){
   const fields = []; let cur = "", inQ = false;
   for(let i = 0; i < line.length; i++){
@@ -906,20 +906,37 @@ function parseCSVLine(line){
   fields.push(cur.trim());
   return fields;
 }
-function stripAccents(s){ return s.normalize("NFD").replace(/[̀-ͯ]/g,""); }
+const CATS_VALIDAS = ["personaje","animal","lugar","objeto","libro","versiculo","evento","concepto","personalizado"];
+const DIFS_VALIDAS = ["principiante","intermedio","cristiano","avanzado","maduro","experto","exegeta"];
+function looksLikeCat(s){ return CATS_VALIDAS.some(c => s.includes(c)); }
+function looksLikeDif(s){ return DIFS_VALIDAS.some(d => s.includes(d)); }
 function parseCustomCards(text){
+  text = text.replace(/^﻿/, "");
   const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l && !l.match(/^nombre[,;\t]/i));
   const cards = [];
-  for(const line of lines){
+  for(let line of lines){
+    line = line.replace(/^\d+[,;\t]\s*/, "");
+    if(!line) continue;
     const f = parseCSVLine(line);
-    if(f.length < 9) continue;
-    const [nombre, cat, dif, verso, ...pistas] = f;
-    if(!nombre || pistas.filter(p=>p).length < 3) continue;
+    if(f.length < 7) continue;
+    let nombre, cat, dif, verso, pistas;
+    if(f.length >= 9 && looksLikeCat(f[1].toLowerCase()) && looksLikeDif(f[2].toLowerCase())){
+      [nombre, cat, dif, verso, ...pistas] = f;
+    } else if(f.length >= 9){
+      [nombre, cat, dif, verso, ...pistas] = f;
+    } else {
+      nombre = f[0]; cat = f[1] || "personalizado"; dif = f[2] || "intermedio"; verso = f[3] || "";
+      pistas = f.slice(4);
+    }
+    if(!nombre || nombre.length < 2) continue;
+    if(pistas.filter(p => p && p.length > 5).length < 2) continue;
+    const p5 = [];
+    for(let i = 0; i < 5; i++) p5.push(pistas[i] && pistas[i].length > 3 ? pistas[i] : (p5[p5.length-1] || pistas[0] || "Pista no disponible"));
     cards.push({
-      c: stripAccents(cat.toLowerCase()).replace(/\s+/g,"_") || "personalizado",
-      d: stripAccents(dif.toLowerCase()) || "intermedio",
+      c: (cat||"").toLowerCase().replace(/[^a-z0-9_]/g,"") || "personalizado",
+      d: (dif||"").toLowerCase().replace(/[^a-z0-9]/g,"") || "intermedio",
       nombre, verso: verso || "",
-      pistas: [pistas[0]||"",pistas[1]||"",pistas[2]||"",pistas[3]||pistas[2]||"",pistas[4]||pistas[3]||pistas[2]||""],
+      pistas: p5,
       custom: true
     });
   }
@@ -930,8 +947,8 @@ function refreshCustomPreview(){
   customCards = parseCustomCards(txt);
   const el = $("custom-preview");
   if(!txt.trim()){ el.textContent = ""; el.className = "custom-preview"; }
-  else if(customCards.length === 0){ el.textContent = "⚠ No se detectaron tarjetas válidas. Revisa el formato."; el.className = "custom-preview error"; }
-  else { el.textContent = "✓ " + customCards.length + " tarjeta" + (customCards.length>1?"s":"") + " detectada" + (customCards.length>1?"s":""); el.className = "custom-preview"; }
+  else if(customCards.length === 0){ el.textContent = "⚠ No se detectaron tarjetas. Verifica que el formato sea: nombre,categoría,dificultad,verso,pista1,pista2,..."; el.className = "custom-preview error"; }
+  else { el.textContent = "✓ " + customCards.length + " tarjeta" + (customCards.length>1?"s":"") + ": " + customCards.slice(0,5).map(c=>c.nombre).join(", ") + (customCards.length>5 ? "…" : ""); el.className = "custom-preview"; }
   refreshPool();
 }
 
