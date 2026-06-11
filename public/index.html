@@ -191,21 +191,29 @@ input.codigo{text-transform:uppercase;letter-spacing:.4em;text-align:center;font
 
 Cada tarjeta tiene 5 pistas que van de difícil a fácil (la pista 1 es la más difícil, la 5 la más obvia). El jugador debe adivinar "quién soy" o "qué soy".
 
-FORMATO: genera un CSV con estas columnas exactas (separadas por coma):
+FORMATO OBLIGATORIO: texto plano, una tarjeta por línea, 9 campos separados por coma:
 nombre,categoria,dificultad,verso,pista1,pista2,pista3,pista4,pista5
 
-Reglas:
-- nombre: la respuesta (ej: "Albert Einstein")
-- categoria: una palabra (ej: personaje, lugar, objeto, evento, concepto)
-- dificultad: principiante, intermedio, avanzado o experto
-- verso: una frase célebre o dato clave entre comillas (ej: "E=mc²")
-- pista1 a pista5: escritas en primera persona ("Nací en...", "Soy conocido por...")
-- Cada pista en comillas dobles si contiene comas
-- NO incluyas fila de encabezado, solo los datos
-- Genera al menos 15 tarjetas variadas
+Reglas ESTRICTAS del formato:
+- Devuelve SOLO las líneas de datos, nada más. Sin encabezados, sin explicaciones, sin texto adicional, sin números de fila.
+- NUNCA uses tabulaciones. El separador es SIEMPRE la coma.
+- CADA campo que contenga comas DEBE ir entre comillas dobles. Ejemplo: "Nací en Noyon, Francia, en 1509"
+- Las pistas van en primera persona: "Nací en...", "Fui conocido por...", "Soy el autor de..."
+- NO abras Excel ni Google Sheets para verificar. El resultado debe ser texto plano listo para copiar y pegar.
+- Genera exactamente 5 pistas por tarjeta. SIEMPRE 9 campos por línea.
 
-Ejemplo de una línea:
-Albert Einstein,personaje,intermedio,"E=mc²","Nací en Alemania en 1879 pero me hice ciudadano de otro país.","Trabajé en una oficina de patentes antes de revolucionar la física.","Recibí el Nobel de Física, pero no por mi teoría más famosa.","Mi lengua afuera en una foto es una de las imágenes más conocidas del siglo XX.","Soy el autor de la teoría de la relatividad."</pre>
+Campos:
+- nombre: la respuesta (ej: Albert Einstein)
+- categoria: una sola palabra sin tildes (personaje, lugar, objeto, evento, concepto, libro)
+- dificultad: principiante, intermedio, avanzado o experto
+- verso: frase célebre o dato clave
+- pista1 a pista5: de más difícil a más fácil
+
+Genera al menos 15 tarjetas variadas.
+
+EJEMPLO (copia este formato exacto):
+Albert Einstein,personaje,intermedio,"E=mc²","Nací en Alemania en 1879 pero me hice ciudadano de otro país.","Trabajé en una oficina de patentes antes de revolucionar la física.","Recibí el Nobel de Física, pero no por mi teoría más famosa.","Mi lengua afuera en una foto es una de las imágenes más conocidas del siglo XX.","Soy el autor de la teoría de la relatividad."
+Napoleón Bonaparte,personaje,avanzado,"La victoria pertenece al más perseverante","Nací en Córcega un año después de que Francia comprara la isla.","Fui artillero antes de convertirme en general con apenas 24 años.","Me coroné a mí mismo emperador en la catedral de Notre Dame.","Perdí mi imperio tras una derrota en tierras belgas en 1815.","Soy el emperador francés exiliado a la isla de Santa Elena."</pre>
       </div>
       <div class="tab-custom">
         <button class="sel" data-tab="texto">📝 Pegar texto</button>
