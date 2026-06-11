@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>¿Quién Soy? — Multijugador</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700;9..144,900&family=Space+Grotesk:wght@400;500;700&display=swap');
+:root{
+  --noche:#241a4a; --noche-prof:#1a1238;
+  --tarjeta:#2f2460; --tarjeta-claro:#3b2e76;
+  --oro:#f5b82e; --coral:#ff6b5a; --menta:#5ee6b8;
+  --crema:#fff6e3; --crema-suave:rgba(255,246,227,.62);
+  --display:'Fraunces', Georgia, serif;
+  --cuerpo:'Space Grotesk', system-ui, sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{font-family:var(--cuerpo);background:radial-gradient(1200px 800px at 70% -10%, #3a2c74 0%, var(--noche) 45%, var(--noche-prof) 100%);color:var(--crema);min-height:100vh;display:flex;flex-direction:column}
+button{font-family:var(--cuerpo);cursor:pointer;border:none}
+button:focus-visible, input:focus-visible{outline:3px solid var(--oro);outline-offset:3px}
+input{font-family:var(--cuerpo)}
+.pantalla{display:none;flex:1;flex-direction:column;align-items:center;justify-content:flex-start;padding:28px 18px;gap:16px}
+.pantalla.activa{display:flex}
+.centrada{justify-content:center}
+h1.titulo{font-family:var(--display);font-weight:900;font-size:clamp(2.2rem,8vw,4.4rem);line-height:.95;text-align:center;letter-spacing:-.02em}
+h1.titulo .q{color:var(--oro);display:inline-block;transform:rotate(-8deg)}
+.sub{text-align:center;color:var(--crema-suave);font-size:clamp(.92rem,2vw,1.1rem);max-width:560px}
+.caja{background:var(--tarjeta);border-radius:22px;padding:22px;width:min(560px,100%);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.caja h2{font-family:var(--display);font-weight:700;font-size:1.1rem;margin-bottom:10px}
+.caja h2:not(:first-child){margin-top:18px}
+.fila-sel{display:flex;gap:8px;flex-wrap:wrap}
+.fila-sel button{flex:1;min-width:70px;padding:11px 8px;border-radius:13px;font-size:.92rem;font-weight:700;background:var(--tarjeta-claro);color:var(--crema-suave);transition:transform .12s, background .12s}
+.fila-sel button.sel{background:var(--oro);color:var(--noche-prof)}
+.fila-sel button:hover{transform:translateY(-2px)}
+.fila-sel.compacta button{flex:1 1 calc(33% - 8px);min-width:92px}
+.contador-pool{margin-top:12px;text-align:center;font-size:.9rem;font-weight:700;color:var(--menta);background:rgba(94,230,184,.08);border:1px solid rgba(94,230,184,.35);border-radius:12px;padding:8px}
+.contador-pool.vacio{color:var(--coral);background:rgba(255,107,90,.08);border-color:rgba(255,107,90,.4)}
+input.txt{width:100%;font-size:1.05rem;font-weight:500;padding:13px 16px;border-radius:12px;border:2px solid transparent;background:var(--noche-prof);color:var(--crema)}
+input.txt::placeholder{color:rgba(255,246,227,.35)}
+input.codigo{text-transform:uppercase;letter-spacing:.4em;text-align:center;font-family:var(--display);font-weight:900;font-size:1.6rem}
+.btn-grande{margin-top:16px;width:100%;padding:16px 0;border-radius:16px;font-size:1.15rem;font-weight:700;background:var(--coral);color:#fff;transition:transform .12s, box-shadow .12s;box-shadow:0 8px 24px rgba(255,107,90,.35)}
+.btn-grande:hover{transform:translateY(-2px)}
+.btn-grande:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.btn-sec{margin-top:10px;width:100%;padding:12px 0;border-radius:14px;font-size:.98rem;font-weight:700;background:var(--tarjeta-claro);color:var(--crema)}
+.error-msg{color:var(--coral);font-size:.9rem;font-weight:700;min-height:1.2em;text-align:center;margin-top:8px}
+.nota{font-size:.78rem;color:var(--crema-suave);margin-top:10px;text-align:center}
+.rol-botones{display:flex;flex-direction:column;gap:12px;width:min(420px,100%)}
+.rol-botones button{padding:22px;border-radius:18px;font-size:1.2rem;font-weight:700;background:var(--tarjeta);color:var(--crema);border:2px solid var(--tarjeta-claro);transition:transform .12s, border-color .12s;text-align:left}
+.rol-botones button:hover{transform:translateY(-3px);border-color:var(--oro)}
+.rol-botones .desc{display:block;font-size:.85rem;font-weight:500;color:var(--crema-suave);margin-top:4px}
+.codigo-grande{font-family:var(--display);font-weight:900;font-size:clamp(3rem,14vw,5.5rem);letter-spacing:.18em;color:var(--oro);text-align:center;background:var(--tarjeta);border:2px dashed var(--oro);border-radius:20px;padding:12px 24px}
+.lista-jug{display:flex;flex-direction:column;gap:8px;width:100%}
+.grupo-equipo{background:var(--noche-prof);border-radius:14px;padding:12px 14px}
+.grupo-equipo .ge-titulo{display:flex;align-items:center;gap:8px;font-weight:700;margin-bottom:6px}
+.grupo-equipo .ge-titulo .pc{width:12px;height:12px;border-radius:50%}
+.grupo-equipo .ge-jugs{display:flex;flex-wrap:wrap;gap:6px}
+.jug-chip{background:var(--tarjeta-claro);border-radius:999px;padding:5px 13px;font-size:.88rem;font-weight:700}
+.equipo-opcion{display:flex;align-items:center;gap:10px;width:100%;padding:14px;border-radius:14px;font-size:1.05rem;font-weight:700;background:var(--tarjeta-claro);color:var(--crema);margin-bottom:8px;transition:transform .12s}
+.equipo-opcion:hover{transform:translateY(-2px)}
+.equipo-opcion .pc{width:14px;height:14px;border-radius:50%}
+.insignia{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
+.insignia span{background:var(--tarjeta);border:1px solid var(--tarjeta-claro);border-radius:999px;padding:6px 14px;font-size:.82rem;font-weight:700}
+.insignia .dif{border-color:rgba(245,184,46,.5);color:var(--oro)}
+.cab-juego{width:min(900px,100%);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.progreso{font-size:.82rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--crema-suave)}
+.valor{display:flex;align-items:baseline;gap:8px;background:var(--tarjeta);border-radius:16px;padding:7px 16px;border:2px solid var(--oro)}
+.valor .num{font-family:var(--display);font-weight:900;font-size:clamp(1.5rem,4vw,2.2rem);color:var(--oro);line-height:1}
+.valor .lbl{font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--crema-suave)}
+.banner{width:min(900px,100%);text-align:center;font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:.9rem;background:linear-gradient(90deg, rgba(245,184,46,.15), rgba(255,107,90,.2), rgba(245,184,46,.15));border:1px solid var(--oro);color:var(--oro);border-radius:13px;padding:9px}
+.zona-pistas{width:min(900px,100%);display:flex;flex-direction:column;gap:10px}
+.pista{background:var(--tarjeta);border-left:6px solid var(--oro);border-radius:14px;padding:13px 17px;font-size:clamp(1rem,2.4vw,1.35rem);line-height:1.45;display:flex;gap:12px;animation:entrar .35s ease both}
+.pista .n{font-family:var(--display);font-weight:900;color:var(--oro);flex-shrink:0}
+@keyframes entrar{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.panel-buzz{width:min(900px,100%);background:linear-gradient(135deg, #4a3a12, #5a4308);border:2px solid var(--oro);border-radius:18px;padding:18px;text-align:center;animation:entrar .3s ease both}
+.panel-buzz .quien{font-family:var(--display);font-weight:900;font-size:clamp(1.4rem,5vw,2.2rem);color:var(--oro)}
+.panel-buzz .acciones{display:flex;gap:10px;margin-top:14px}
+.panel-buzz .acciones button{flex:1;padding:14px;border-radius:13px;font-size:1.05rem;font-weight:700}
+.b-ok{background:var(--menta);color:var(--noche-prof)}
+.b-no{background:var(--coral);color:#fff}
+.controles{width:min(900px,100%);display:flex;gap:9px;flex-wrap:wrap}
+.controles button{flex:1;min-width:140px;padding:13px 10px;border-radius:13px;font-size:.98rem;font-weight:700;transition:transform .12s}
+.controles button:hover:not(:disabled){transform:translateY(-2px)}
+.controles button:disabled{opacity:.35;cursor:not-allowed}
+.c-pista{background:var(--oro);color:var(--noche-prof)}
+.c-revelar{background:var(--tarjeta-claro);color:var(--crema)}
+.c-siguiente{background:var(--menta);color:var(--noche-prof)}
+.revelacion{width:min(900px,100%);background:linear-gradient(135deg, var(--tarjeta-claro), var(--tarjeta));border:2px solid var(--menta);border-radius:20px;padding:22px;text-align:center;animation:entrar .4s ease both}
+.revelacion .es{font-size:.78rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--menta)}
+.revelacion .nombre{font-family:var(--display);font-weight:900;font-size:clamp(1.8rem,6vw,3.2rem);line-height:1.05;margin:6px 0 8px}
+.revelacion .verso{color:var(--crema-suave);font-size:clamp(.9rem,2vw,1.05rem);font-style:italic}
+.revelacion .gano{margin-top:10px;font-size:1rem;color:var(--oro);font-weight:700}
+.justificacion{margin-top:14px;text-align:left;background:rgba(26,18,56,.55);border:1px solid var(--tarjeta-claro);border-radius:13px;padding:13px 15px}
+.justificacion .j-titulo{font-size:.74rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--menta);margin-bottom:8px}
+.justificacion ol{list-style:none;display:flex;flex-direction:column;gap:8px;counter-reset:jn}
+.justificacion li{display:flex;flex-direction:column;gap:1px;counter-increment:jn;padding-left:24px;position:relative;font-size:.88rem;line-height:1.4}
+.justificacion li::before{content:counter(jn) ".";position:absolute;left:0;top:0;font-family:var(--display);font-weight:900;color:var(--oro)}
+.justificacion .j-ref{color:var(--oro);font-size:.8rem;font-weight:700}
+.marcador{width:min(900px,100%);display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.eq-chip{display:flex;align-items:center;gap:8px;background:var(--tarjeta);border-radius:999px;padding:7px 15px 7px 9px;font-weight:700;font-size:.92rem;border:2px solid transparent}
+.eq-chip.lider{border-color:var(--oro)}
+.eq-chip .pc{width:12px;height:12px;border-radius:50%}
+.eq-chip .pts{font-family:var(--display);font-weight:900;color:var(--oro);font-size:1.05rem}
+.eq-chip .pts.neg{color:var(--coral)}
+.btn-buzz{width:min(320px,82vw);aspect-ratio:1;border-radius:50%;margin:10px auto;background:radial-gradient(circle at 35% 30%, #ff8a7a, var(--coral) 60%, #d94f40);color:#fff;font-family:var(--display);font-weight:900;font-size:clamp(1.8rem,9vw,2.8rem);box-shadow:0 14px 40px rgba(255,107,90,.5), inset 0 -8px 18px rgba(0,0,0,.25);transition:transform .1s ease;display:block}
+.btn-buzz:active{transform:scale(.95)}
+.btn-buzz:disabled{filter:grayscale(.7) brightness(.6);box-shadow:none;cursor:not-allowed}
+.estado-jugador{width:min(560px,100%);margin:0 auto;text-align:center;font-size:1.05rem;font-weight:700;padding:14px;border-radius:14px;background:var(--tarjeta);border:1px solid var(--tarjeta-claro)}
+.estado-jugador.turno{background:linear-gradient(135deg,#4a3a12,#5a4308);border-color:var(--oro);color:var(--oro);animation:pulso 1.4s ease infinite}
+.estado-jugador.bloq{color:#ffb3a8;border-color:rgba(255,107,90,.5)}
+@keyframes pulso{0%,100%{box-shadow:0 0 0 rgba(245,184,46,0)}50%{box-shadow:0 0 22px rgba(245,184,46,.35)}}
+.podio-titulo{font-family:var(--display);font-weight:900;font-size:clamp(2rem,7vw,3.8rem);text-align:center;line-height:1.05}
+.podio-titulo span{color:var(--oro)}
+.lista-final{display:flex;flex-direction:column;gap:10px;width:min(520px,100%)}
+.fila-final{display:flex;align-items:center;gap:14px;background:var(--tarjeta);border-radius:16px;padding:15px 20px;animation:entrar .4s ease both}
+.fila-final.campeon{background:linear-gradient(135deg,#5a4308,#7a5c0e);border:2px solid var(--oro)}
+.fila-final .pos{font-family:var(--display);font-weight:900;font-size:1.4rem;color:var(--oro);width:2.2ch}
+.fila-final .nom{flex:1;font-weight:700;font-size:1.1rem}
+.fila-final .total{font-family:var(--display);font-weight:900;font-size:1.4rem;color:var(--oro)}
+.sync{position:fixed;bottom:10px;right:12px;font-size:.7rem;color:rgba(255,246,227,.35)}
+.sync.off{color:var(--coral)}
+#confeti{position:fixed;inset:0;pointer-events:none;z-index:100}
+@media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}}
+</style>
+</head>
+<body>
+<canvas id="confeti"></canvas>
+<span class="sync" id="sync">conectando…</span>
+
+<section class="pantalla activa centrada" id="p-rol">
+  <h1 class="titulo">¿Quién<br>soy<span class="q">?</span></h1>
+  <p class="sub">Modo multijugador en tiempo real: cada uno juega desde su móvil con un botón para responder. Por equipos o todos contra todos.</p>
+  <div class="rol-botones">
+    <button id="btn-rol-host">🎙 Soy el presentador<span class="desc">Creo la partida, controlo las rondas y valido las respuestas</span></button>
+    <button id="btn-rol-jugador">📱 Soy jugador<span class="desc">Me uno con un código y respondo desde mi móvil</span></button>
+  </div>
+</section>
+
+<section class="pantalla" id="p-config">
+  <h1 class="titulo" style="font-size:clamp(1.8rem,6vw,2.8rem)">Crear partida</h1>
+  <div class="caja">
+    <h2>Modo de juego</h2>
+    <div class="fila-sel" id="sel-modo">
+      <button data-m="equipos" class="sel">👥 Por equipos</button>
+      <button data-m="individual">🙋 Individual</button>
+    </div>
+    <div id="zona-equipos">
+      <h2>Número de equipos</h2>
+      <div class="fila-sel" id="sel-neq">
+        <button data-n="2">2</button><button data-n="3" class="sel">3</button><button data-n="4">4</button>
+      </div>
+    </div>
+    <h2>Categorías</h2>
+    <div class="fila-sel compacta" id="sel-cats"></div>
+    <h2>Dificultad</h2>
+    <div class="fila-sel compacta" id="sel-difs"></div>
+    <div class="contador-pool" id="contador-pool"></div>
+    <h2>Tarjetas por partida</h2>
+    <div class="fila-sel" id="sel-dur">
+      <button data-d="5">5</button><button data-d="8" class="sel">8</button><button data-d="12">12</button><button data-d="all">Todas</button>
+    </div>
+    <h2>Penalización por fallo</h2>
+    <div class="fila-sel" id="sel-pen">
+      <button data-p="0">Sin castigo</button><button data-p="5">−5</button><button data-p="10" class="sel">−10</button>
+    </div>
+    <h2>Ronda final x2</h2>
+    <div class="fila-sel" id="sel-doble">
+      <button data-x="si" class="sel">🔥 Sí</button><button data-x="no">No</button>
+    </div>
+    <button class="btn-grande" id="btn-crear">Crear sala</button>
+    <p class="error-msg" id="err-config"></p>
+  </div>
+</section>
+
+<section class="pantalla" id="p-lobby">
+  <p class="sub" style="margin-top:6px">Comparte este código con los jugadores:</p>
+  <div class="codigo-grande" id="lobby-codigo">····</div>
+  <p class="sub" id="lobby-url"></p>
+  <div class="caja">
+    <h2>Jugadores conectados (<span id="lobby-n">0</span>)</h2>
+    <div class="lista-jug" id="lobby-lista"><p class="nota">Esperando jugadores…</p></div>
+    <button class="btn-grande" id="btn-empezar" disabled>Empezar partida</button>
+    <p class="nota">No cierres ni recargues esta pestaña durante la partida. Si la recargas, la sala se recupera sola.</p>
+  </div>
+</section>
+
+<section class="pantalla" id="p-host">
+  <div class="cab-juego">
+    <div class="progreso" id="h-progreso"></div>
+    <div class="valor"><span class="num" id="h-valor">50</span><span class="lbl">puntos<br>en juego</span></div>
+  </div>
+  <div class="insignia" id="h-insignia"></div>
+  <div class="banner" id="h-banner" style="display:none"></div>
+  <div class="zona-pistas" id="h-pistas"></div>
+  <div class="panel-buzz" id="h-buzz" style="display:none">
+    <div style="font-size:.8rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--crema-suave)">📣 Quiere responder</div>
+    <div class="quien" id="h-buzz-quien"></div>
+    <div class="acciones">
+      <button class="b-ok" id="btn-ok">✔ Correcto</button>
+      <button class="b-no" id="btn-no">✘ Incorrecto</button>
+    </div>
+  </div>
+  <div class="controles" id="h-controles">
+    <button class="c-pista" id="btn-pista">Mostrar pista</button>
+    <button class="c-revelar" id="btn-revelar">Revelar</button>
+  </div>
+  <div class="controles" id="h-sig" style="display:none">
+    <button class="c-siguiente" id="btn-siguiente">Siguiente tarjeta</button>
+  </div>
+  <div class="marcador" id="h-marcador"></div>
+</section>
+
+<section class="pantalla centrada" id="p-unirse">
+  <h1 class="titulo" style="font-size:clamp(1.8rem,6vw,2.8rem)">Unirse a la partida</h1>
+  <div class="caja" id="paso-codigo">
+    <h2>Código de sala</h2>
+    <input class="txt codigo" id="inp-codigo" maxlength="4" placeholder="ABCD" autocomplete="off">
+    <button class="btn-grande" id="btn-buscar">Buscar sala</button>
+    <p class="error-msg" id="err-unirse"></p>
+  </div>
+  <div class="caja" id="paso-datos" style="display:none">
+    <h2>Tu nombre</h2>
+    <input class="txt" id="inp-nombre" maxlength="20" placeholder="Escribe tu nombre">
+    <div id="paso-equipo" style="display:none"><h2>Elige tu equipo</h2><div id="opciones-equipo"></div></div>
+    <button class="btn-grande" id="btn-unirse">¡Entrar!</button>
+    <p class="error-msg" id="err-datos"></p>
+  </div>
+</section>
+
+<section class="pantalla centrada" id="p-espera">
+  <h1 class="titulo" style="font-size:clamp(1.6rem,6vw,2.4rem)">¡Estás dentro<span class="q">!</span></h1>
+  <p class="sub" id="espera-info"></p>
+  <div class="caja">
+    <h2>En la sala (<span id="espera-n">0</span>)</h2>
+    <div class="lista-jug" id="espera-lista"></div>
+  </div>
+  <p class="sub">Esperando a que el presentador empiece… no cierres esta pestaña.</p>
+</section>
+
+<section class="pantalla" id="p-jugador">
+  <div class="cab-juego">
+    <div class="progreso" id="j-progreso"></div>
+    <div class="valor"><span class="num" id="j-valor">50</span><span class="lbl">puntos<br>en juego</span></div>
+  </div>
+  <div class="insignia" id="j-insignia"></div>
+  <div class="banner" id="j-banner" style="display:none"></div>
+  <div class="zona-pistas" id="j-pistas"></div>
+  <div id="j-zona-buzz"></div>
+  <div class="marcador" id="j-marcador"></div>
+</section>
+
+<section class="pantalla centrada" id="p-final">
+  <h1 class="podio-titulo" id="f-titulo">¡Tenemos<br><span>campeones!</span></h1>
+  <div class="lista-final" id="f-lista"></div>
+  <button class="btn-sec" id="btn-reiniciar" style="width:min(520px,100%);display:none">Crear otra partida</button>
+</section>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+/* ================= CATEGORÍAS Y DIFICULTADES ================= */
+const CATS = {
+  personaje:{ label:"🧔 Personajes", uno:"Personaje", rev:"El personaje era" },
+  animal:{ label:"🐑 Animales", uno:"Animal", rev:"El animal era" },
+  lugar:{ label:"🏛️ Lugares", uno:"Lugar", rev:"El lugar era" },
+  objeto:{ label:"🏺 Objetos", uno:"Objeto", rev:"El objeto era" },
+  libro:{ label:"📜 Libros", uno:"Libro de la Biblia", rev:"El libro era" },
+  versiculo:{ label:"✒️ Versículos", uno:"Versículo", rev:"El versículo era" }
+};
+const DIFS = {
+  principiante:{ label:"🌱 Principiante" },
+  cristiano:{ label:"✝️ Cristiano" },
+  maduro:{ label:"📖 Maduro" },
+  exegeta:{ label:"🎓 Exégeta" }
+};
+
+/* ================= BANCO DE TARJETAS ================= */
+/* c = categoría, d = dificultad */
+const BASE = [
+/* ---- PERSONAJES ---- */
+{ c:"personaje", d:"principiante", nombre:"Moisés", verso:"«Ven, por tanto, y te enviaré a Faraón, para que saques de Egipto a mi pueblo.» — Éxodo 3:10",
+  pistas:["Pasé mis primeros años en un palacio que no era de mi pueblo.","Estuve 40 años cuidando ovejas en la tierra de Madián.","Dios me habló desde una zarza que ardía sin consumirse.","Levanté mi vara y el mar se abrió en dos.","Recibí las tablas con los Diez Mandamientos en el monte Sinaí."]},
+{ c:"personaje", d:"cristiano", nombre:"Ester", verso:"«¿Y quién sabe si para esta hora has llegado al reino?» — Ester 4:14",
+  pistas:["Quedé huérfana y me crió un primo mayor que yo.","Mi nombre hebreo era Hadasa.","Llegué a vivir en el palacio del rey de Persia.","Ayuné tres días antes de presentarme ante el rey sin ser llamada.","Arriesgué mi vida para salvar a mi pueblo de un decreto de muerte."]},
+{ c:"personaje", d:"principiante", nombre:"David", verso:"«Tú vienes a mí con espada y lanza; mas yo vengo a ti en el nombre de Jehová de los ejércitos.» — 1 Samuel 17:45",
+  pistas:["Era el menor de ocho hermanos y nadie contaba conmigo.","Defendí mi rebaño de un león y de un oso.","El profeta Samuel me ungió en secreto cuando aún era joven.","Escribí muchos de los Salmos con mi arpa.","Derribé a un gigante con una honda y una piedra."]},
+{ c:"personaje", d:"cristiano", nombre:"Rut", verso:"«Tu pueblo será mi pueblo, y tu Dios mi Dios.» — Rut 1:16",
+  pistas:["No nací en Israel: vine de la tierra de Moab.","Enviudé joven, pero no abandoné a mi suegra.","Recogía espigas en los campos para que tuviéramos qué comer.","Un hombre llamado Booz me mostró bondad y me redimió.","Soy la bisabuela del rey David."]},
+{ c:"personaje", d:"principiante", nombre:"Daniel", verso:"«Mi Dios envió su ángel, el cual cerró la boca de los leones.» — Daniel 6:22",
+  pistas:["Me llevaron cautivo a Babilonia siendo muy joven.","Decidí no contaminarme con la comida de la mesa del rey.","Dios me dio la capacidad de interpretar sueños y visiones.","Oraba tres veces al día aunque estaba prohibido por ley.","Pasé una noche en un foso lleno de leones y salí sin un rasguño."]},
+{ c:"personaje", d:"principiante", nombre:"José", verso:"«Vosotros pensasteis mal contra mí, mas Dios lo encaminó a bien.» — Génesis 50:20",
+  pistas:["Mi padre me regaló una túnica que provocó celos en casa.","Tuve sueños donde mi familia se inclinaba ante mí.","Mis propios hermanos me vendieron como esclavo.","Fui a la cárcel por una acusación falsa en Egipto.","Terminé siendo el segundo al mando de todo Egipto."]},
+{ c:"personaje", d:"principiante", nombre:"Pedro", verso:"«Tú eres el Cristo, el Hijo del Dios viviente.» — Mateo 16:16",
+  pistas:["Mi hermano Andrés fue quien me llevó a conocer al Maestro.","Dejé mis redes de pescador para seguirlo.","Caminé sobre el agua... hasta que miré las olas.","Negué tres veces conocerlo, y un gallo me lo recordó.","Prediqué en Pentecostés y ese día creyeron como tres mil personas."]},
+{ c:"personaje", d:"cristiano", nombre:"Pablo", verso:"«Ya no vivo yo, mas vive Cristo en mí.» — Gálatas 2:20",
+  pistas:["Nací en Tarso y era ciudadano romano.","Estudié la ley bajo el famoso maestro Gamaliel.","Perseguía a los cristianos con cartas de autorización.","Una luz del cielo me dejó ciego camino a Damasco.","Escribí trece cartas que están en el Nuevo Testamento."]},
+{ c:"personaje", d:"cristiano", nombre:"Elías", verso:"«Respóndeme, Jehová, respóndeme, para que conozca este pueblo que tú eres Dios.» — 1 Reyes 18:37",
+  pistas:["Anuncié al rey Acab que no llovería por años.","Unos cuervos me traían pan y carne junto a un arroyo.","Una viuda me alimentó con una harina que nunca se acababa.","Desafié a 450 profetas de Baal en el monte Carmelo.","No morí: un carro de fuego me llevó al cielo en un torbellino."]},
+{ c:"personaje", d:"principiante", nombre:"Jonás", verso:"«La salvación es de Jehová.» — Jonás 2:9",
+  pistas:["Dios me dio una misión y yo compré un boleto en dirección contraria.","Por mi culpa una tormenta casi hunde el barco donde viajaba.","Los marineros me lanzaron al mar para calmar la tempestad.","Pasé tres días y tres noches en un lugar muy oscuro... y muy húmedo.","Al final prediqué en Nínive y toda la ciudad se arrepintió."]},
+{ c:"personaje", d:"maduro", nombre:"Débora", verso:"«Levántate, porque este es el día en que Jehová ha entregado a Sísara en tus manos.» — Jueces 4:14",
+  pistas:["Gobernaba a Israel en una época en que casi nadie esperaba eso de una mujer.","El pueblo venía a buscarme bajo una palmera para que juzgara sus casos.","Era profetisa: hablaba de parte de Dios.","Le dije a Barac que fuera a la batalla, y él no quiso ir sin mí.","Después de la victoria sobre Sísara, canté un cántico que está en Jueces 5."]},
+{ c:"personaje", d:"cristiano", nombre:"Juan el Bautista", verso:"«He aquí el Cordero de Dios, que quita el pecado del mundo.» — Juan 1:29",
+  pistas:["Mi nacimiento fue anunciado a mi padre por un ángel en el templo.","Vivía en el desierto y mi dieta era... peculiar: langostas y miel silvestre.","Vestía ropa de pelo de camello con un cinto de cuero.","Predicaba: «Arrepentíos, porque el reino de los cielos se ha acercado».","Bauticé a Jesús en el río Jordán."]},
+{ c:"personaje", d:"cristiano", nombre:"Josué", verso:"«Esfuérzate y sé valiente... porque Jehová tu Dios estará contigo dondequiera que vayas.» — Josué 1:9",
+  pistas:["Fui uno de los doce espías enviados a explorar la tierra prometida.","Solo Caleb y yo creímos que podíamos conquistarla.","Fui el ayudante de Moisés durante años, y luego su sucesor.","Dije: «Yo y mi casa serviremos a Jehová».","Marchamos siete días alrededor de Jericó y los muros cayeron."]},
+{ c:"personaje", d:"cristiano", nombre:"Abraham", verso:"«Y creyó a Jehová, y le fue contado por justicia.» — Génesis 15:6",
+  pistas:["Salí de mi tierra, Ur de los caldeos, sin saber a dónde iba.","Dios me prometió una descendencia como las estrellas del cielo.","Mi esposa y yo nos reímos: éramos demasiado viejos para tener hijos.","Dios cambió mi nombre: ahora significa «padre de multitudes».","Estuve dispuesto a ofrecer a mi hijo Isaac, y Dios proveyó un carnero."]},
+{ c:"personaje", d:"principiante", nombre:"Zaqueo", verso:"«Hoy ha venido la salvación a esta casa.» — Lucas 19:9",
+  pistas:["En mi ciudad, Jericó, casi nadie me quería... y con razón.","Era jefe de los cobradores de impuestos y me había hecho rico.","Mi estatura era un problema cuando había multitudes.","Me subí a un árbol sicómoro solo para ver pasar a Jesús.","Devolví cuadruplicado lo que había robado después de que Él comió en mi casa."]},
+{ c:"personaje", d:"principiante", nombre:"María de Nazaret", verso:"«He aquí la sierva del Señor; hágase conmigo conforme a tu palabra.» — Lucas 1:38",
+  pistas:["Vivía en un pueblo pequeño de Galilea del que nadie esperaba nada.","Estaba comprometida con un carpintero.","El ángel Gabriel me visitó con un anuncio que cambió la historia.","Mi prima Elisabet también esperaba un hijo milagroso.","Di a luz en Belén y acosté a mi bebé en un pesebre."]},
+{ c:"personaje", d:"principiante", nombre:"Sansón", verso:"«Señor Jehová, acuérdate ahora de mí, y fortaléceme, te ruego, solamente esta vez.» — Jueces 16:28",
+  pistas:["Un ángel anunció mi nacimiento y dio reglas estrictas para mi vida.","Era nazareo: ni vino, ni tocar cadáveres... ni cortes de pelo.","Despedacé un león con mis propias manos.","Una mujer llamada Dalila descubrió el secreto de mi fuerza.","Derribé un templo filisteo empujando sus dos columnas."]},
+{ c:"personaje", d:"principiante", nombre:"Noé", verso:"«Pero Noé halló gracia ante los ojos de Jehová.» — Génesis 6:8",
+  pistas:["La Biblia dice que caminé con Dios en una generación corrupta.","Mis vecinos debieron pensar que estaba loco durante años.","Construí algo enorme... lejos del mar.","Mi familia y yo fuimos los únicos humanos que sobrevivimos a un juicio mundial.","Después del diluvio, Dios puso el arcoíris como señal de su pacto."]},
+{ c:"personaje", d:"maduro", nombre:"Nicodemo", verso:"«De cierto, de cierto te digo, que el que no naciere de nuevo, no puede ver el reino de Dios.» — Juan 3:3",
+  pistas:["Era fariseo y miembro del Sanedrín.","Visité a Jesús de noche, quizá para que nadie me viera.","Me quedé perplejo con la idea de «nacer de nuevo».","Defendí a Jesús ante mis colegas: «¿Juzga acaso nuestra ley a un hombre sin oírle?»","Ayudé a sepultar a Jesús llevando unas cien libras de mirra y áloes."]},
+{ c:"personaje", d:"maduro", nombre:"Bernabé", verso:"«Porque era varón bueno, y lleno del Espíritu Santo y de fe.» — Hechos 11:24",
+  pistas:["Era levita, natural de Chipre.","Vendí un campo y puse el dinero a los pies de los apóstoles.","Mi apodo significa «hijo de consolación».","Defendí a Saulo cuando nadie en Jerusalén confiaba en él.","Acompañé a Pablo en el primer viaje misionero... hasta que discutimos por causa de Marcos."]},
+{ c:"personaje", d:"exegeta", nombre:"Melquisedec", verso:"«Tú eres sacerdote para siempre, según el orden de Melquisedec.» — Salmo 110:4",
+  pistas:["Aparezco solo en tres versículos de Génesis, pero Hebreos me dedica capítulos enteros.","Era rey y sacerdote a la vez, algo que en Israel estaba prohibido combinar.","Mi nombre significa «rey de justicia» y reiné en Salem, que significa «paz».","Bendije a Abraham con pan y vino, y él me dio los diezmos de todo.","El Salmo 110 dice que el Mesías es sacerdote para siempre «según mi orden»."]},
+{ c:"personaje", d:"exegeta", nombre:"Habacuc", verso:"«Mas el justo por su fe vivirá.» — Habacuc 2:4",
+  pistas:["Soy el profeta que se atrevió a interrogar a Dios... dos veces.","Subí a mi puesto de guardia a esperar la respuesta del Señor.","Dios me anunció que usaría a los caldeos, y eso me escandalizó aún más.","Mi libro termina cantando: aunque la higuera no florezca, me alegraré en Jehová.","De mi libro salió la frase que encendió la Reforma: «el justo por su fe vivirá»."]},
+
+/* ---- ANIMALES ---- */
+{ c:"animal", d:"principiante", nombre:"La serpiente del Edén", verso:"«Ella te herirá en la cabeza, y tú le herirás en el calcañar.» — Génesis 3:15",
+  pistas:["Era más astuta que todos los animales del campo.","Sembré la duda con una pregunta: «¿Conque Dios os ha dicho...?»","Fui condenada a arrastrarme y a comer polvo.","Dios anunció que la simiente de la mujer me heriría la cabeza.","Engañé a Eva en el huerto del Edén."]},
+{ c:"animal", d:"principiante", nombre:"El gran pez de Jonás", verso:"«Pero Jehová tenía preparado un gran pez que tragase a Jonás.» — Jonás 1:17",
+  pistas:["Jehová me tenía preparado para una misión muy especial.","Mi trabajo duró exactamente tres días y tres noches.","Dentro de mí alguien hizo una de las oraciones más sinceras de la Biblia.","Jesús me mencionó como señal de su muerte y resurrección.","Me tragué a un profeta fugitivo... y luego lo vomité en tierra firme."]},
+{ c:"animal", d:"maduro", nombre:"La burra de Balaam", verso:"«Entonces Jehová abrió la boca al asna.» — Números 22:28",
+  pistas:["Vi en el camino algo que mi amo, supuestamente vidente, no podía ver.","Me aparté tres veces y recibí tres palizas injustas.","Un ángel con espada desenvainada bloqueaba nuestro camino.","Jehová abrió mi boca y le reclamé a mi amo.","Soy el animal que habló con el profeta Balaam."]},
+{ c:"animal", d:"principiante", nombre:"La paloma de Noé", verso:"«Y la paloma volvió a él a la hora de la tarde; y he aquí que traía una hoja de olivo.» — Génesis 8:11",
+  pistas:["Me soltaron desde la ventana de un hogar... flotante.","La primera vez no hallé dónde posarme y regresé.","La segunda vez volví con una hoja de olivo en el pico.","La tercera vez ya no regresé: la tierra se había secado.","Noé me envió desde el arca después del diluvio."]},
+{ c:"animal", d:"cristiano", nombre:"Los cuervos de Elías", verso:"«Y los cuervos le traían pan y carne por la mañana y por la tarde.» — 1 Reyes 17:6",
+  pistas:["Normalmente somos aves de mala fama, pero Dios nos usó para bien.","Hacíamos dos repartos diarios: mañana y tarde.","Nuestro menú a domicilio: pan y carne.","Trabajábamos junto al arroyo de Querit.","Alimentamos al profeta Elías durante la gran sequía."]},
+{ c:"animal", d:"cristiano", nombre:"El carnero del monte Moriah", verso:"«Y llamó Abraham el nombre de aquel lugar, Jehová proveerá.» — Génesis 22:14",
+  pistas:["Aparecí justo a tiempo en la cima de un monte.","Estaba trabado en un zarzal por los cuernos.","Por mi causa, aquel lugar se llamó «Jehová proveerá».","Tomé el lugar de un muchacho sobre el altar.","Fui el sacrificio que sustituyó a Isaac."]},
+{ c:"animal", d:"principiante", nombre:"El gallo de Pedro", verso:"«Antes que el gallo cante, me negarás tres veces.» — Mateo 26:34",
+  pistas:["Jesús habló de mí en una profecía la noche de la última cena.","Mi único trabajo fue... cantar.","Canté en el momento exacto, cerca del patio del sumo sacerdote.","Mi canto hizo llorar amargamente a un discípulo.","Le recordé a Pedro que había negado a Jesús tres veces."]},
+{ c:"animal", d:"exegeta", nombre:"Leviatán", verso:"«¿Sacarás tú al leviatán con anzuelo?» — Job 41:1",
+  pistas:["Dios mismo me describe durante un capítulo entero para humillar a un hombre justo.","«¿Sacarás tú con anzuelo...?» — la respuesta, obviamente, es no.","El Salmo 104 dice que Dios me formó para que jugara en el mar.","Isaías me llama «serpiente veloz» que será castigada con la espada de Jehová.","Soy la criatura marina indomable de Job 41."]},
+
+/* ---- LUGARES ---- */
+{ c:"lugar", d:"principiante", nombre:"Belén", verso:"«Pero tú, Belén Efrata... de ti me saldrá el que será Señor en Israel.» — Miqueas 5:2",
+  pistas:["Mi nombre significa «casa del pan».","Rut y Booz se conocieron en mis campos.","Aquí nació y fue ungido el rey David.","El profeta Miqueas anunció que de mí saldría el gobernante de Israel.","Jesús nació en mí, y unos pastores vinieron a adorarle."]},
+{ c:"lugar", d:"principiante", nombre:"Jericó", verso:"«Y el muro se derrumbó... y tomaron la ciudad.» — Josué 6:20",
+  pistas:["Soy una de las ciudades más antiguas del mundo.","Una mujer llamada Rahab escondió espías dentro de mis muros.","Siglos después, un cobrador de impuestos se subió a un árbol en mis calles para ver a Jesús.","Israel marchó a mi alrededor durante siete días.","Mis muros cayeron al sonido de las trompetas."]},
+{ c:"lugar", d:"cristiano", nombre:"Nínive", verso:"«Y vio Dios lo que hicieron, que se convirtieron de su mal camino.» — Jonás 3:10",
+  pistas:["Era la gran capital del imperio asirio.","Se necesitaban tres días para recorrerme.","El profeta Nahúm anunció mi destrucción final.","Un profeta llegó a predicarme después de un viaje... submarino.","Toda mi población se arrepintió con la predicación de Jonás."]},
+{ c:"lugar", d:"cristiano", nombre:"Babilonia", verso:"«¿No es ésta la gran Babilonia que yo edifiqué?» — Daniel 4:30",
+  pistas:["Mis jardines colgantes fueron una maravilla del mundo antiguo.","En mis llanuras se intentó construir una torre que llegara al cielo.","Llevé cautivo al pueblo de Judá durante 70 años.","Mi rey Nabucodonosor perdió la razón por su orgullo.","En Apocalipsis soy el símbolo del mundo en rebeldía contra Dios."]},
+{ c:"lugar", d:"cristiano", nombre:"El monte Sinaí", verso:"«Todo el monte Sinaí humeaba, porque Jehová había descendido sobre él en fuego.» — Éxodo 19:18",
+  pistas:["También me conocen como Horeb.","Una zarza ardió en mis faldas sin consumirse.","Humo, fuego, truenos y sonido de bocina cubrieron mi cima.","Elías huyó hasta mí y oyó un silbo apacible y delicado.","Aquí Moisés recibió la ley y los Diez Mandamientos."]},
+{ c:"lugar", d:"maduro", nombre:"Patmos", verso:"«Yo Juan... estaba en la isla llamada Patmos, por causa de la palabra de Dios.» — Apocalipsis 1:9",
+  pistas:["Soy una pequeña isla rocosa del mar Egeo.","Roma me usaba como lugar de destierro.","Mi visitante más famoso estaba en mí «por causa de la palabra de Dios».","Un día del Señor, alguien en mí fue arrebatado «en el Espíritu».","El apóstol Juan recibió el Apocalipsis estando en mí."]},
+{ c:"lugar", d:"maduro", nombre:"Antioquía", verso:"«Y a los discípulos se les llamó cristianos por primera vez en Antioquía.» — Hechos 11:26",
+  pistas:["Era la tercera ciudad más grande del imperio romano.","Bernabé fue enviado a supervisar lo que Dios estaba haciendo en mí.","De mí salieron los viajes misioneros de Pablo.","En mí Pablo confrontó a Pedro cara a cara (lo cuenta Gálatas 2).","A los discípulos se les llamó «cristianos» por primera vez en mí."]},
+{ c:"lugar", d:"exegeta", nombre:"Berea", verso:"«Recibieron la palabra con toda solicitud, escudriñando cada día las Escrituras.» — Hechos 17:11",
+  pistas:["Soy una ciudad de Macedonia, no muy lejos de Tesalónica.","Pablo y Silas llegaron a mí de noche, huyendo de un alboroto.","Lucas dice que mis judíos eran «más nobles» que los de Tesalónica.","Mis habitantes recibieron la palabra con toda solicitud.","Mi gente escudriñaba cada día las Escrituras para verificar lo que Pablo predicaba."]},
+
+/* ---- OBJETOS ---- */
+{ c:"objeto", d:"principiante", nombre:"El arca de Noé", verso:"«Hazte un arca de madera de gofer.» — Génesis 6:14",
+  pistas:["Me construyeron siguiendo medidas exactas dadas por Dios.","Me hicieron de madera de gofer, calafateada con brea por dentro y por fuera.","Tenía tres pisos, una ventana y una sola puerta.","Fui el hogar flotante de una familia y de muchísimos animales.","Reposé sobre los montes de Ararat cuando bajaron las aguas."]},
+{ c:"objeto", d:"cristiano", nombre:"El arca del pacto", verso:"«De allí me declararé a ti, de sobre el propiciatorio.» — Éxodo 25:22",
+  pistas:["Estaba cubierta de oro puro por dentro y por fuera.","Dos querubines de oro me custodiaban desde mi tapa.","Guardaba las tablas de la ley, un vaso con maná y la vara de Aarón.","Los filisteos me capturaron... y pronto se arrepintieron de hacerlo.","Crucé el Jordán delante del pueblo y rodeé los muros de Jericó."]},
+{ c:"objeto", d:"cristiano", nombre:"El maná", verso:"«Y la casa de Israel lo llamó Maná.» — Éxodo 16:31",
+  pistas:["Mi nombre viene de una pregunta: «¿Qué es esto?»","Aparecía cada mañana con el rocío... excepto un día a la semana.","Si me guardaban hasta el día siguiente, criaba gusanos y olía mal.","Sabía a hojuelas con miel.","Fui el pan del cielo que alimentó a Israel 40 años en el desierto."]},
+{ c:"objeto", d:"maduro", nombre:"El vellón de Gedeón", verso:"«He aquí que yo pondré un vellón de lana en la era.» — Jueces 6:37",
+  pistas:["Fui usado dos noches seguidas en una era de trigo.","Mi dueño tenía mucho miedo y pedía confirmaciones a Dios.","Primera noche: yo empapado de rocío, el suelo seco.","Segunda noche: yo seco, todo el suelo empapado.","Fui la señal de lana que Gedeón pidió antes de ir a la batalla."]},
+{ c:"objeto", d:"maduro", nombre:"La serpiente de bronce", verso:"«Como Moisés levantó la serpiente en el desierto, así es necesario que el Hijo del Hombre sea levantado.» — Juan 3:14",
+  pistas:["Me fabricaron en el desierto por orden directa de Dios.","Me levantaron sobre un asta, a la vista de todos.","Mirarme salvaba de un veneno mortal.","Siglos después el rey Ezequías me destruyó: me habían convertido en ídolo y me llamaban Nehustán.","Jesús dijo que él sería levantado como yo, para que todo aquel que cree tenga vida eterna."]},
+{ c:"objeto", d:"cristiano", nombre:"El becerro de oro", verso:"«Israel, estos son tus dioses, que te sacaron de la tierra de Egipto.» — Éxodo 32:4",
+  pistas:["Nací de un montón de zarcillos y joyas fundidas.","Aarón dijo que salí del fuego... yo solito.","Me presentaron al pueblo diciendo: «Estos son tus dioses, Israel».","Moisés me redujo a polvo, lo esparció en el agua y la hizo beber al pueblo.","Fui el ídolo que Israel adoró al pie del Sinaí."]},
+{ c:"objeto", d:"exegeta", nombre:"El Urim y el Tumim", verso:"«Y pondrás en el pectoral del juicio el Urim y el Tumim.» — Éxodo 28:30",
+  pistas:["Somos un misterio: nadie sabe hoy exactamente cómo éramos.","Vivíamos en el pectoral del juicio, sobre el corazón del sumo sacerdote.","Nuestros nombres podrían traducirse «luces y perfecciones».","Servíamos para consultar la voluntad de Jehová.","Esdras 2:63 menciona que ciertos sacerdotes debían esperar a que alguien nos consultara para resolver su caso."]},
+
+/* ---- LIBROS ---- */
+{ c:"libro", d:"principiante", nombre:"Salmos", verso:"«Jehová es mi pastor; nada me faltará.» — Salmo 23:1",
+  pistas:["Soy el libro más largo de la Biblia.","Tengo 150 capítulos... que en realidad son cantos y oraciones.","Tengo varios autores, pero el principal fue pastor de ovejas y rey.","Contengo el famoso «Jehová es mi pastor».","Soy el cancionero y libro de oración de Israel."]},
+{ c:"libro", d:"principiante", nombre:"Génesis", verso:"«En el principio creó Dios los cielos y la tierra.» — Génesis 1:1",
+  pistas:["Mi nombre significa «origen» o «principio».","Cuento la historia de los grandes patriarcas: Abraham, Isaac, Jacob y José.","En mí aparece el primer arcoíris como señal de un pacto.","Termino con un ataúd en Egipto.","Empiezo diciendo: «En el principio creó Dios los cielos y la tierra»."]},
+{ c:"libro", d:"cristiano", nombre:"Apocalipsis", verso:"«Bienaventurado el que lee, y los que oyen las palabras de esta profecía.» — Apocalipsis 1:3",
+  pistas:["Mi nombre significa «revelación», no «catástrofe».","Empiezo con siete cartas a siete iglesias de Asia.","Me escribieron desde una isla usada como prisión.","Prometo bendición especial a quien me lee y guarda mis palabras.","Soy el último libro de la Biblia."]},
+{ c:"libro", d:"cristiano", nombre:"Cantares", verso:"«Las muchas aguas no podrán apagar el amor.» — Cantares 8:7",
+  pistas:["Salomón dice que soy su mejor canción.","Casi nunca menciono el nombre de Dios directamente.","Soy pura poesía de amor entre un amado y una amada.","Comparo el amor con un fuego que las muchas aguas no pueden apagar.","Mi nombre completo es «Cantar de los Cantares»."]},
+{ c:"libro", d:"maduro", nombre:"Filemón", verso:"«No ya como esclavo, sino como más que esclavo, como hermano amado.» — Filemón 16",
+  pistas:["Soy una carta de un solo capítulo.","Me escribieron desde una prisión.","Trato sobre un esclavo fugitivo llamado Onésimo.","Pablo pide que lo reciban «no ya como esclavo, sino como hermano amado».","Llevo el nombre del dueño del esclavo, un creyente de Colosas."]},
+{ c:"libro", d:"maduro", nombre:"Lamentaciones", verso:"«Nuevas son cada mañana; grande es tu fidelidad.» — Lamentaciones 3:23",
+  pistas:["Soy poesía fúnebre: cinco poemas de duelo.","Cuatro de mis cinco capítulos son acrósticos del alfabeto hebreo.","Lloro la destrucción de Jerusalén a manos de Babilonia.","Tradicionalmente me atribuyen al «profeta llorón».","En medio del dolor declaro: «Por la misericordia de Jehová no hemos sido consumidos»."]},
+{ c:"libro", d:"maduro", nombre:"Hebreos", verso:"«Pero sin fe es imposible agradar a Dios.» — Hebreos 11:6",
+  pistas:["Nadie sabe con certeza quién me escribió.","Presento a Jesús como superior a los ángeles, a Moisés y al sacerdocio de Aarón.","Hablo de un sacerdote misterioso «según el orden de Melquisedec».","Mi capítulo 11 es la gran galería de los héroes de la fe.","Animo a los creyentes a no volver atrás y a correr con paciencia la carrera."]},
+{ c:"libro", d:"exegeta", nombre:"Abdías", verso:"«Y el reino será de Jehová.» — Abdías 21",
+  pistas:["Soy el libro más corto del Antiguo Testamento: 21 versículos.","Mi nombre significa «siervo de Jehová».","Soy un oráculo completo contra una sola nación: Edom.","Condeno a los descendientes de Esaú por alegrarse de la caída de su hermano Jacob.","Termino anunciando: «Y el reino será de Jehová»."]},
+
+/* ---- VERSÍCULOS (la respuesta es la cita) ---- */
+{ c:"versiculo", d:"principiante", nombre:"Juan 3:16", verso:"«Porque de tal manera amó Dios al mundo, que ha dado a su Hijo unigénito...»",
+  pistas:["Me dijeron de noche, en una conversación con un fariseo.","Me han llamado «el evangelio en miniatura».","Hablo del amor más grande y del regalo más grande.","Empiezo así: «Porque de tal manera amó Dios al mundo...»","Termino: «...para que todo aquel que en él cree, no se pierda, mas tenga vida eterna»."]},
+{ c:"versiculo", d:"principiante", nombre:"Salmo 23:1", verso:"«Jehová es mi pastor; nada me faltará.»",
+  pistas:["Me escribió alguien que sabía bien de qué hablaba: cuidó ovejas de joven.","Soy de los versículos más leídos en los momentos difíciles.","Abro un poema que habla de aguas de reposo y del valle de sombra de muerte.","Comparo a Dios con un oficio del campo.","Digo: «Jehová es mi pastor; nada me faltará»."]},
+{ c:"versiculo", d:"cristiano", nombre:"Filipenses 4:13", verso:"«Todo lo puedo en Cristo que me fortalece.»",
+  pistas:["Me escribieron desde una cárcel... y aun así mi tema es el contentamiento.","Me citan mucho los deportistas, a veces fuera de contexto.","Mi contexto habla de saber vivir con abundancia y con escasez.","Mi secreto no es la fuerza propia, sino quién fortalece.","Digo: «Todo lo puedo en Cristo que me fortalece»."]},
+{ c:"versiculo", d:"cristiano", nombre:"Romanos 8:28", verso:"«A los que aman a Dios, todas las cosas les ayudan a bien.»",
+  pistas:["Estoy en el capítulo que empieza sin condenación y termina sin separación.","Soy un consuelo enorme... para quienes cumplen mi condición.","Hablo de «todas las cosas», incluso las dolorosas.","Mi promesa es para «los que conforme a su propósito son llamados».","Digo: «A los que aman a Dios, todas las cosas les ayudan a bien»."]},
+{ c:"versiculo", d:"cristiano", nombre:"Jeremías 29:11", verso:"«Porque yo sé los pensamientos que tengo acerca de vosotros... pensamientos de paz, y no de mal.»",
+  pistas:["Soy parte de una carta enviada a personas en el exilio.","Mi contexto incluye 70 años de espera en Babilonia.","Hablo de los planes que Dios tiene para su pueblo.","Prometo «el fin que esperáis».","Digo: «Yo sé los pensamientos que tengo acerca de vosotros... pensamientos de paz»."]},
+{ c:"versiculo", d:"maduro", nombre:"Gálatas 2:20", verso:"«Con Cristo estoy juntamente crucificado, y ya no vivo yo, mas vive Cristo en mí.»",
+  pistas:["Aparezco poco después de que Pablo confrontara a Pedro en Antioquía.","Hablo de la muerte... de alguien que sigue vivo.","Mi tema es la unión del creyente con Cristo.","Digo que la vida que ahora se vive, se vive «en la fe del Hijo de Dios».","Empiezo: «Con Cristo estoy juntamente crucificado, y ya no vivo yo...»"]},
+{ c:"versiculo", d:"exegeta", nombre:"Habacuc 2:4", verso:"«He aquí que aquel cuya alma no es recta, se enorgullece; mas el justo por su fe vivirá.»",
+  pistas:["Soy la respuesta de Dios a un profeta que esperaba en su puesto de guardia.","Me citan tres libros del Nuevo Testamento: Romanos, Gálatas y Hebreos.","Fui la chispa que encendió el corazón de Lutero y la Reforma.","Contrasto al orgulloso con el justo.","Digo: «Mas el justo por su fe vivirá»."]}
+];
+
+/* ================= REFERENCIAS (justificación de cada pista) ================= */
+const REFS = {
+"Moisés":["Éxodo 2:10","Éxodo 2:15; Hechos 7:29-30","Éxodo 3:2-4","Éxodo 14:21-22","Éxodo 31:18"],
+"Ester":["Ester 2:7","Ester 2:7","Ester 2:8-9","Ester 4:16","Ester 7:3-4"],
+"David":["1 Samuel 16:10-11","1 Samuel 17:34-36","1 Samuel 16:13","2 Samuel 23:1","1 Samuel 17:49-50"],
+"Rut":["Rut 1:4","Rut 1:16-17","Rut 2:2-3","Rut 4:9-10","Rut 4:17"],
+"Daniel":["Daniel 1:3-6","Daniel 1:8","Daniel 1:17; 2:19","Daniel 6:10","Daniel 6:16-23"],
+"José":["Génesis 37:3-4","Génesis 37:5-9","Génesis 37:28","Génesis 39:19-20","Génesis 41:39-41"],
+"Pedro":["Juan 1:40-42","Mateo 4:18-20","Mateo 14:29-30","Lucas 22:60-62","Hechos 2:14,41"],
+"Pablo":["Hechos 22:3,25-28","Hechos 22:3","Hechos 9:1-2","Hechos 9:3-8","Romanos a Filemón (13 cartas)"],
+"Elías":["1 Reyes 17:1","1 Reyes 17:5-6","1 Reyes 17:13-16","1 Reyes 18:19-22","2 Reyes 2:11"],
+"Jonás":["Jonás 1:1-3","Jonás 1:4","Jonás 1:15","Jonás 1:17","Jonás 3:5-10"],
+"Débora":["Jueces 4:4","Jueces 4:5","Jueces 4:4","Jueces 4:8","Jueces 5:1"],
+"Juan el Bautista":["Lucas 1:11-13","Mateo 3:1,4","Mateo 3:4","Mateo 3:1-2","Mateo 3:13-17"],
+"Josué":["Números 13:8,16","Números 14:6-9","Éxodo 24:13; Josué 1:1-2","Josué 24:15","Josué 6:15-20"],
+"Abraham":["Génesis 12:1; Hebreos 11:8","Génesis 15:5","Génesis 17:17; 18:12","Génesis 17:5","Génesis 22:9-13"],
+"Zaqueo":["Lucas 19:1-2,7","Lucas 19:2","Lucas 19:3","Lucas 19:4","Lucas 19:8"],
+"María de Nazaret":["Lucas 1:26; Juan 1:46","Mateo 1:18","Lucas 1:26-33","Lucas 1:36","Lucas 2:4-7"],
+"Sansón":["Jueces 13:3-5","Jueces 13:5; Números 6:1-8","Jueces 14:5-6","Jueces 16:18-19","Jueces 16:29-30"],
+"Noé":["Génesis 6:9","2 Pedro 2:5","Génesis 6:14","Génesis 7:23","Génesis 9:12-16"],
+"Nicodemo":["Juan 3:1","Juan 3:2","Juan 3:4,9","Juan 7:50-51","Juan 19:39"],
+"Bernabé":["Hechos 4:36","Hechos 4:37","Hechos 4:36","Hechos 9:26-27","Hechos 13:2; 15:36-39"],
+"Melquisedec":["Génesis 14:18-20; Hebreos 7","Génesis 14:18","Hebreos 7:2","Génesis 14:18-20","Salmo 110:4; Hebreos 7:17"],
+"Habacuc":["Habacuc 1:2-4; 1:12-2:1","Habacuc 2:1","Habacuc 1:5-6,12-13","Habacuc 3:17-18","Habacuc 2:4; Romanos 1:17"],
+"La serpiente del Edén":["Génesis 3:1","Génesis 3:1","Génesis 3:14","Génesis 3:15","Génesis 3:1-6"],
+"El gran pez de Jonás":["Jonás 1:17","Jonás 1:17","Jonás 2:1-9","Mateo 12:40","Jonás 2:10"],
+"La burra de Balaam":["Números 22:23","Números 22:23-28","Números 22:23,31","Números 22:28","Números 22:21-33"],
+"La paloma de Noé":["Génesis 8:6,8","Génesis 8:9","Génesis 8:11","Génesis 8:12","Génesis 8:8-12"],
+"Los cuervos de Elías":["1 Reyes 17:4","1 Reyes 17:6","1 Reyes 17:6","1 Reyes 17:5","1 Reyes 17:1-6"],
+"El carnero del monte Moriah":["Génesis 22:13","Génesis 22:13","Génesis 22:14","Génesis 22:9-13","Génesis 22:13"],
+"El gallo de Pedro":["Mateo 26:34","Mateo 26:34","Mateo 26:69-74","Mateo 26:75","Lucas 22:61"],
+"Leviatán":["Job 41 (capítulo entero)","Job 41:1","Salmo 104:26","Isaías 27:1","Job 41:1-34"],
+"Belén":["Miqueas 5:2 (Efrata)","Rut 2:1-8","1 Samuel 16:1,13; 17:12","Miqueas 5:2","Lucas 2:4-16"],
+"Jericó":["Josué 6 (historia)","Josué 2:1-6","Lucas 19:1-4","Josué 6:3-4,14","Josué 6:20"],
+"Nínive":["Jonás 1:2; Nahúm 1:1","Jonás 3:3","Nahúm 1:1; 3:7","Jonás 1:17-2:10","Jonás 3:5-10"],
+"Babilonia":["Daniel 4:30","Génesis 11:1-9","2 Crónicas 36:20-21; Jeremías 25:11","Daniel 4:28-33","Apocalipsis 17-18"],
+"El monte Sinaí":["Éxodo 3:1 (Horeb)","Éxodo 3:2","Éxodo 19:16-19","1 Reyes 19:8-12","Éxodo 19-20; 31:18"],
+"Patmos":["Apocalipsis 1:9","Apocalipsis 1:9","Apocalipsis 1:9","Apocalipsis 1:10","Apocalipsis 1:9-11"],
+"Antioquía":["Hechos 11:19-26","Hechos 11:22","Hechos 13:1-3","Gálatas 2:11","Hechos 11:26"],
+"Berea":["Hechos 17:10","Hechos 17:10","Hechos 17:11","Hechos 17:11","Hechos 17:11"],
+"El arca de Noé":["Génesis 6:14-16","Génesis 6:14","Génesis 6:16","Génesis 6:19-7:1","Génesis 8:4"],
+"El arca del pacto":["Éxodo 25:11","Éxodo 25:18-20","Hebreos 9:4","1 Samuel 5:1-12","Josué 3:14-17; 6:6-11"],
+"El maná":["Éxodo 16:15","Éxodo 16:13-14,26","Éxodo 16:20","Éxodo 16:31","Éxodo 16:35; Juan 6:31"],
+"El vellón de Gedeón":["Jueces 6:37","Jueces 6:36-40","Jueces 6:37-38","Jueces 6:39-40","Jueces 6:36-40"],
+"La serpiente de bronce":["Números 21:8","Números 21:8-9","Números 21:9","2 Reyes 18:4","Juan 3:14-15"],
+"El becerro de oro":["Éxodo 32:2-4","Éxodo 32:24","Éxodo 32:4","Éxodo 32:20","Éxodo 32:1-6"],
+"El Urim y el Tumim":["Éxodo 28:30","Éxodo 28:30","Significado hebreo probable","Números 27:21","Esdras 2:63"],
+"Salmos":["150 capítulos","Salmo 150 (cierre del libro)","2 Samuel 23:1","Salmo 23:1","Uso litúrgico de Israel"],
+"Génesis":["Génesis 1:1 (gr. génesis = origen)","Génesis 12-50","Génesis 9:13","Génesis 50:26","Génesis 1:1"],
+"Apocalipsis":["Apocalipsis 1:1 (apokálypsis)","Apocalipsis 2-3","Apocalipsis 1:9","Apocalipsis 1:3","Último libro del canon"],
+"Cantares":["Cantares 1:1","Ausencia del nombre divino en el libro","Cantares 1-8","Cantares 8:6-7","Cantares 1:1"],
+"Filemón":["Filemón (25 versículos)","Filemón 1,9","Filemón 10","Filemón 16","Colosenses 4:9,17"],
+"Lamentaciones":["Lamentaciones 1-5","Acrósticos en caps. 1-4","2 Reyes 25; Lamentaciones 1:1","Tradición: Jeremías (2 Crónicas 35:25)","Lamentaciones 3:22-23"],
+"Hebreos":["Autor no identificado en el texto","Hebreos 1-7","Hebreos 5:6; 7:1-17","Hebreos 11","Hebreos 11:6; 12:1"],
+"Abdías":["Abdías (21 versículos)","Abdías = «siervo de Yah»","Abdías 1","Abdías 10-12","Abdías 21"],
+"Juan 3:16":["Juan 3:1-2","Lutero lo llamó así","Juan 3:16","Juan 3:16","Juan 3:16"],
+"Salmo 23:1":["1 Samuel 16:11","Uso pastoral universal","Salmo 23:2,4","Salmo 23:1","Salmo 23:1"],
+"Filipenses 4:13":["Filipenses 1:13-14","Uso popular en el deporte","Filipenses 4:11-12","Filipenses 4:13","Filipenses 4:13"],
+"Romanos 8:28":["Romanos 8:1,38-39","Romanos 8:28","Romanos 8:28","Romanos 8:28","Romanos 8:28"],
+"Jeremías 29:11":["Jeremías 29:1","Jeremías 29:10","Jeremías 29:11","Jeremías 29:11","Jeremías 29:11"],
+"Gálatas 2:20":["Gálatas 2:11-14","Gálatas 2:20","Gálatas 2:20","Gálatas 2:20","Gálatas 2:20"],
+"Habacuc 2:4":["Habacuc 2:1","Romanos 1:17; Gálatas 3:11; Hebreos 10:38","Romanos 1:17 y el testimonio de Lutero","Habacuc 2:4","Habacuc 2:4"]
+};
+
+
+const PUNTOS = [50, 40, 30, 20, 10];
+const COLORES = ["#f5b82e","#ff6b5a","#5ee6b8","#8f7dff"];
+const NOMBRES_EQ = ["Equipo Dorado","Equipo Coral","Equipo Menta","Equipo Violeta"];
+
+const $ = id => document.getElementById(id);
+function esc(s){ const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+const P = ["p-rol","p-config","p-lobby","p-host","p-unirse","p-espera","p-jugador","p-final"];
+function ver(id){ P.forEach(p => $(p).classList.toggle("activa", p === id)); }
+
+/* ---- sonido (host) ---- */
+let actx = null;
+function tono(f,d,t,v,c){
+  try{
+    if(!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = t || "sine"; o.frequency.value = f;
+    g.gain.setValueAtTime(0, actx.currentTime + (c||0));
+    g.gain.linearRampToValueAtTime(v || .18, actx.currentTime + (c||0) + .015);
+    g.gain.exponentialRampToValueAtTime(.001, actx.currentTime + (c||0) + d);
+    o.connect(g); g.connect(actx.destination);
+    o.start(actx.currentTime + (c||0)); o.stop(actx.currentTime + (c||0) + d + .05);
+  }catch(e){}
+}
+const snd = {
+  buzz(){ tono(740,.18,"square",.16); tono(990,.18,"square",.14,.1); },
+  ok(){ tono(523,.14,"sine",.2,0); tono(659,.14,"sine",.2,.12); tono(784,.22,"sine",.22,.24); },
+  no(){ tono(160,.3,"sawtooth",.16,0); tono(120,.35,"sawtooth",.14,.12); },
+  reveal(){ tono(392,.3,"sine",.16,0); tono(587,.4,"sine",.18,.1); },
+  fin(){ [523,659,784,1047].forEach((f,i)=>tono(f,.35,"sine",.2,i*.16)); tono(1319,.6,"sine",.22,.7); }
+};
+/* ---- confeti ---- */
+const canvas = $("confeti"), ctx2 = canvas.getContext("2d");
+let parts = [], anim = null;
+function ajusta(){ canvas.width = innerWidth; canvas.height = innerHeight; }
+addEventListener("resize", ajusta); ajusta();
+function confeti(n){
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const cs = ["#f5b82e","#ff6b5a","#5ee6b8","#8f7dff","#fff6e3"];
+  for(let i=0;i<(n||120);i++) parts.push({x:Math.random()*canvas.width,y:-20-Math.random()*120,vx:(Math.random()-.5)*3.2,vy:2.5+Math.random()*3.5,r:4+Math.random()*5,rot:Math.random()*Math.PI,vr:(Math.random()-.5)*.25,c:cs[Math.floor(Math.random()*cs.length)],vida:130+Math.random()*60});
+  if(!anim) animar();
+}
+function animar(){
+  ctx2.clearRect(0,0,canvas.width,canvas.height);
+  parts = parts.filter(p => p.vida > 0 && p.y < canvas.height + 30);
+  parts.forEach(p => { p.x+=p.vx; p.y+=p.vy; p.rot+=p.vr; p.vida--; ctx2.save(); ctx2.translate(p.x,p.y); ctx2.rotate(p.rot); ctx2.fillStyle=p.c; ctx2.fillRect(-p.r/2,-p.r/2,p.r,p.r*.62); ctx2.restore(); });
+  if(parts.length) anim = requestAnimationFrame(animar);
+  else { anim = null; ctx2.clearRect(0,0,canvas.width,canvas.height); }
+}
+
+/* ---- estado local ---- */
+const socket = io();
+let rol = null, cod = null, hostKey = null;
+let est = null;
+let catSel = new Set(), difSel = new Set();
+let modo = "equipos", nEq = 3, dur = "8", pen = 10, doble = true;
+let miId = null, miNombre = "", miEquipo = null;
+let ronAnterior = -1, buzzAnterior = null, resueltoAnterior = false;
+
+socket.on("connect", () => { $("sync").textContent = "conectado ✓"; $("sync").classList.remove("off"); reclamarSiHost(); });
+socket.on("disconnect", () => { $("sync").textContent = "sin conexión — reconectando…"; $("sync").classList.add("off"); });
+socket.on("sala_cerrada", () => { alert("El presentador cerró la sala."); location.href = location.pathname; });
+
+function reclamarSiHost(){
+  const m = location.hash.match(/^#h=([A-Z]{4})\.(.+)$/);
+  if(!m || rol === "jugador") return;
+  socket.emit("reclamar_host", { code: m[1], key: m[2] }, res => {
+    if(res && res.ok){
+      rol = "host"; cod = m[1]; hostKey = m[2]; est = res.estado;
+      $("lobby-codigo").textContent = cod;
+      $("lobby-url").textContent = location.origin;
+      renderHost();
+    }
+  });
+}
+
+socket.on("estado", e => {
+  est = e;
+  if(rol === "host"){
+    if(e.ronda){
+      if(e.ronda.buzz && JSON.stringify(e.ronda.buzz) !== buzzAnterior){ snd.buzz(); }
+      buzzAnterior = e.ronda.buzz ? JSON.stringify(e.ronda.buzz) : null;
+      if(e.ronda.resuelto && !resueltoAnterior){
+        if(e.ronda.ganador){ snd.ok(); confeti(e.ronda.doble ? 180 : 100); } else snd.reveal();
+      }
+      resueltoAnterior = e.ronda.resuelto;
+    }
+    if(e.fase === "final" && ronAnterior !== -2){ snd.fin(); confeti(220); ronAnterior = -2; }
+    renderHost();
+  } else if(rol === "jugador"){
+    renderJugador();
+  }
+});
+
+function pool(){
+  return BASE.filter(p => (catSel.size === 0 || catSel.has(p.c)) && (difSel.size === 0 || difSel.has(p.d)));
+}
+
+/* ---- rol ---- */
+$("btn-rol-host").addEventListener("click", () => ver("p-config"));
+$("btn-rol-jugador").addEventListener("click", () => ver("p-unirse"));
+
+/* ---- config host ---- */
+function multiSel(idCont, defs, set, labelTodas){
+  const cont = $(idCont); cont.innerHTML = "";
+  const claves = Object.keys(defs);
+  const bT = document.createElement("button");
+  bT.textContent = labelTodas;
+  const ref = () => {
+    bT.classList.toggle("sel", set.size === 0);
+    [...cont.children].slice(1).forEach((b,i) => b.classList.toggle("sel", set.has(claves[i])));
+    const n = pool().length;
+    $("contador-pool").textContent = n === 0 ? "⚠ Ninguna tarjeta coincide" : n + " tarjetas disponibles";
+    $("contador-pool").classList.toggle("vacio", n === 0);
+  };
+  bT.addEventListener("click", () => { set.clear(); ref(); });
+  cont.appendChild(bT);
+  claves.forEach(k => {
+    const b = document.createElement("button");
+    b.textContent = defs[k].label;
+    b.addEventListener("click", () => {
+      if(set.has(k)) set.delete(k); else set.add(k);
+      if(set.size === claves.length) set.clear();
+      ref();
+    });
+    cont.appendChild(b);
+  });
+  ref();
+}
+multiSel("sel-cats", CATS, catSel, "✨ Todas");
+multiSel("sel-difs", DIFS, difSel, "✨ Todas");
+function selU(id, cb){
+  $(id).addEventListener("click", e => {
+    const b = e.target.closest("button"); if(!b) return;
+    document.querySelectorAll("#" + id + " button").forEach(x => x.classList.toggle("sel", x === b));
+    cb(b);
+  });
+}
+selU("sel-modo", b => { modo = b.dataset.m; $("zona-equipos").style.display = modo === "equipos" ? "block" : "none"; });
+selU("sel-neq", b => { nEq = parseInt(b.dataset.n, 10); });
+selU("sel-dur", b => { dur = b.dataset.d; });
+selU("sel-pen", b => { pen = parseInt(b.dataset.p, 10); });
+selU("sel-doble", b => { doble = b.dataset.x === "si"; });
+
+$("btn-crear").addEventListener("click", () => {
+  const lista = pool();
+  if(lista.length === 0){ $("err-config").textContent = "Ninguna tarjeta coincide con la selección."; return; }
+  $("err-config").textContent = "";
+  const barajadas = [...lista];
+  for(let i = barajadas.length-1; i > 0; i--){ const j = Math.floor(Math.random()*(i+1)); [barajadas[i],barajadas[j]] = [barajadas[j],barajadas[i]]; }
+  const n = dur === "all" ? barajadas.length : Math.min(parseInt(dur,10), barajadas.length);
+  const mazo = barajadas.slice(0, n).map(p => ({
+    c:p.c, d:p.d, nombre:p.nombre, verso:p.verso, pistas:p.pistas,
+    refs: REFS[p.nombre] || [], catRev: CATS[p.c].rev
+  }));
+  socket.emit("crear", {
+    config: { modo, equipos: NOMBRES_EQ.slice(0, nEq), pen, doble },
+    mazo
+  }, res => {
+    if(!res || res.error){ $("err-config").textContent = (res && res.error) || "Error al crear la sala."; return; }
+    rol = "host"; cod = res.code; hostKey = res.hostKey;
+    location.hash = "h=" + cod + "." + hostKey;   // permite recuperar la sala si recargas
+    $("lobby-codigo").textContent = cod;
+    $("lobby-url").textContent = location.origin;
+    ver("p-lobby");
+  });
+});
+$("btn-empezar").addEventListener("click", () => socket.emit("cmd", { a:"empezar" }));
+$("btn-pista").addEventListener("click", () => socket.emit("cmd", { a:"pista" }));
+$("btn-revelar").addEventListener("click", () => socket.emit("cmd", { a:"revelar" }));
+$("btn-ok").addEventListener("click", () => socket.emit("cmd", { a:"correcto" }));
+$("btn-no").addEventListener("click", () => socket.emit("cmd", { a:"incorrecto" }));
+$("btn-siguiente").addEventListener("click", () => socket.emit("cmd", { a:"siguiente" }));
+$("btn-reiniciar").addEventListener("click", () => { socket.emit("cmd", { a:"cerrar" }); location.href = location.pathname; });
+
+/* ---- render host ---- */
+function renderHost(){
+  if(!est) return;
+  if(est.fase === "lobby"){ renderLobby(); ver("p-lobby"); return; }
+  if(est.fase === "final"){ renderFinal(true); return; }
+  const r = est.ronda; if(!r) return;
+  ver("p-host");
+  $("h-progreso").textContent = "Tarjeta " + (r.i + 1) + " de " + r.total;
+  $("h-valor").textContent = r.valor;
+  $("h-insignia").innerHTML = '<span>' + CATS[r.c].label + '</span><span class="dif">' + DIFS[r.d].label + '</span>';
+  const ban = $("h-banner");
+  if(r.doble){ ban.textContent = "🔥 Ronda final — ¡puntos y penalizaciones dobles!"; ban.style.display = "block"; }
+  else ban.style.display = "none";
+  $("h-pistas").innerHTML = pintaPistas(r) + (r.resuelto ? pintaRevelacion(r) : "");
+  const buzz = $("h-buzz");
+  if(r.buzz && !r.resuelto){
+    buzz.style.display = "block";
+    $("h-buzz-quien").textContent = r.buzz.n + (est.modo === "equipos" ? " · " + r.buzz.e : "");
+  } else buzz.style.display = "none";
+  $("h-controles").style.display = r.resuelto ? "none" : "flex";
+  $("btn-pista").disabled = r.pistas.length >= 5 || !!r.buzz;
+  $("btn-revelar").disabled = !!r.buzz;
+  $("h-sig").style.display = r.resuelto ? "flex" : "none";
+  $("btn-siguiente").textContent = r.i + 1 < r.total ? "Siguiente tarjeta" : "Ver resultados finales";
+  $("h-marcador").innerHTML = pintaMarcador();
+}
+function renderLobby(){
+  const jugs = Object.values(est.jugadores);
+  $("lobby-n").textContent = jugs.length;
+  $("btn-empezar").disabled = jugs.length === 0;
+  const cont = $("lobby-lista");
+  cont.innerHTML = jugs.length === 0 ? '<p class="nota">Esperando jugadores…</p>' : "";
+  if(est.modo === "equipos"){
+    est.equipos.forEach((eq, i) => {
+      const miembros = jugs.filter(j => j.e === eq);
+      const g = document.createElement("div");
+      g.className = "grupo-equipo";
+      g.innerHTML = '<div class="ge-titulo"><span class="pc" style="background:' + COLORES[i] + '"></span>' + esc(eq) + ' (' + miembros.length + ')</div>' +
+        '<div class="ge-jugs">' + miembros.map(j => '<span class="jug-chip">' + esc(j.n) + '</span>').join("") + '</div>';
+      cont.appendChild(g);
+    });
+  } else if(jugs.length){
+    const g = document.createElement("div");
+    g.className = "grupo-equipo";
+    g.innerHTML = '<div class="ge-jugs">' + jugs.map(j => '<span class="jug-chip">' + esc(j.n) + '</span>').join("") + '</div>';
+    cont.appendChild(g);
+  }
+}
+function pintaPistas(r){
+  return r.pistas.map((p, j) => '<div class="pista"><span class="n">' + (j+1) + '.</span><span>' + esc(p) + '</span></div>').join("");
+}
+function pintaRevelacion(r){
+  const rv = r.rev;
+  let gano;
+  if(r.ganador) gano = '<div class="gano">+' + r.ganador.pts + ' puntos para ' + esc(r.ganador.n) + (r.ganador.e ? ' (' + esc(r.ganador.e) + ')' : '') + ' 🎉</div>';
+  else gano = '<div class="gano" style="color:var(--crema-suave)">Nadie sumó esta vez</div>';
+  const items = rv.pistas.map((p, j) =>
+    '<li><span>' + esc(p) + '</span>' + (rv.refs[j] ? '<span class="j-ref">' + esc(rv.refs[j]) + '</span>' : '') + '</li>'
+  ).join("");
+  return '<div class="revelacion"><div class="es">' + esc(rv.catRev) + '</div><div class="nombre">' + esc(rv.nombre) + '</div>' +
+    '<div class="verso">' + esc(rv.verso) + '</div>' + gano +
+    (items ? '<div class="justificacion"><div class="j-titulo">📖 De dónde sale cada pista</div><ol>' + items + '</ol></div>' : '') +
+    '</div>';
+}
+function pintaMarcador(){
+  if(est.modo === "equipos"){
+    const max = Math.max(...est.equipos.map(e => est.puntosEquipo[e]));
+    return est.equipos.map((e, i) =>
+      '<div class="eq-chip' + (est.puntosEquipo[e] === max && max > 0 ? ' lider' : '') + '"><span class="pc" style="background:' + COLORES[i] + '"></span>' +
+      esc(e) + '<span class="pts' + (est.puntosEquipo[e] < 0 ? ' neg' : '') + '">' + est.puntosEquipo[e] + '</span></div>'
+    ).join("");
+  }
+  const jugs = Object.values(est.jugadores).sort((a,b) => b.p - a.p);
+  const max = jugs.length ? jugs[0].p : 0;
+  return jugs.map(j =>
+    '<div class="eq-chip' + (j.p === max && max > 0 ? ' lider' : '') + '">' + esc(j.n) +
+    '<span class="pts' + (j.p < 0 ? ' neg' : '') + '">' + j.p + '</span></div>'
+  ).join("");
+}
+
+/* ---- jugador ---- */
+let salaInfo = null;
+$("btn-buscar").addEventListener("click", () => {
+  const c = $("inp-codigo").value.trim().toUpperCase();
+  if(c.length !== 4){ $("err-unirse").textContent = "El código tiene 4 letras."; return; }
+  $("err-unirse").textContent = "Buscando…";
+  socket.emit("comprobar", { code: c }, res => {
+    if(!res || res.error){ $("err-unirse").textContent = (res && res.error) || "Error de conexión."; return; }
+    cod = c; salaInfo = res;
+    $("err-unirse").textContent = "";
+    $("paso-codigo").style.display = "none";
+    $("paso-datos").style.display = "block";
+    if(res.modo === "equipos"){
+      $("paso-equipo").style.display = "block";
+      const cont = $("opciones-equipo");
+      cont.innerHTML = "";
+      res.equipos.forEach((eq, i) => {
+        const b = document.createElement("button");
+        b.className = "equipo-opcion";
+        b.innerHTML = '<span class="pc" style="background:' + COLORES[i] + '"></span>' + esc(eq);
+        b.addEventListener("click", () => {
+          miEquipo = eq;
+          [...cont.children].forEach(x => x.style.borderLeft = "");
+          b.style.borderLeft = "6px solid " + COLORES[i];
+        });
+        cont.appendChild(b);
+      });
+    }
+  });
+});
+$("btn-unirse").addEventListener("click", () => {
+  miNombre = $("inp-nombre").value.trim();
+  if(!miNombre){ $("err-datos").textContent = "Escribe tu nombre."; return; }
+  if(salaInfo.modo === "equipos" && !miEquipo){ $("err-datos").textContent = "Elige un equipo."; return; }
+  $("err-datos").textContent = "";
+  socket.emit("unirse", { code: cod, nombre: miNombre, equipo: miEquipo }, res => {
+    if(!res || res.error){ $("err-datos").textContent = (res && res.error) || "No se pudo entrar."; return; }
+    rol = "jugador"; miId = res.id; est = res.estado;
+    $("espera-info").textContent = salaInfo.modo === "equipos"
+      ? "Juegas con " + miEquipo + ". Cuando empiece, pulsa el botón rojo en cuanto sepas la respuesta."
+      : "Juegas en modo individual. Cuando empiece, pulsa el botón rojo en cuanto sepas la respuesta.";
+    renderJugador();
+  });
+});
+
+let pistasPrevias = 0;
+function renderJugador(){
+  if(!est) return;
+  if(est.fase === "lobby"){
+    const jugs = Object.values(est.jugadores);
+    $("espera-n").textContent = jugs.length;
+    $("espera-lista").innerHTML = '<div class="grupo-equipo"><div class="ge-jugs">' +
+      jugs.map(j => '<span class="jug-chip">' + esc(j.n) + (j.e ? " · " + esc(j.e) : "") + '</span>').join("") + '</div></div>';
+    ver("p-espera");
+    return;
+  }
+  if(est.fase === "final"){ renderFinal(false); return; }
+  const r = est.ronda; if(!r) return;
+  ver("p-jugador");
+  if(r.pistas.length !== pistasPrevias && navigator.vibrate) navigator.vibrate(80);
+  pistasPrevias = r.pistas.length;
+  $("j-progreso").textContent = "Tarjeta " + (r.i + 1) + " de " + r.total;
+  $("j-valor").textContent = r.valor;
+  $("j-insignia").innerHTML = '<span>' + CATS[r.c].label + '</span><span class="dif">' + DIFS[r.d].label + '</span>';
+  const ban = $("j-banner");
+  if(r.doble){ ban.textContent = "🔥 Ronda final x2"; ban.style.display = "block"; } else ban.style.display = "none";
+  $("j-pistas").innerHTML = pintaPistas(r) + (r.resuelto ? pintaRevelacion(r) : "");
+  $("j-marcador").innerHTML = pintaMarcador();
+
+  const zona = $("j-zona-buzz");
+  const yo = est.jugadores[miId];
+  const bloqueado = yo && (est.modo === "equipos" ? r.bloq.includes(yo.e) : r.bloq.includes(miId));
+  if(r.resuelto){
+    zona.innerHTML = '<p class="estado-jugador">Esperando la siguiente tarjeta…</p>';
+  } else if(r.buzz){
+    zona.innerHTML = r.buzz.id === miId
+      ? '<p class="estado-jugador turno">📣 ¡Te toca! Di tu respuesta EN VOZ ALTA</p>'
+      : '<p class="estado-jugador">✋ ' + esc(r.buzz.n) + ' está respondiendo…</p>';
+  } else if(bloqueado){
+    zona.innerHTML = '<p class="estado-jugador bloq">✘ Sin intentos en esta ronda' + (est.modo === "equipos" ? " (tu equipo falló)" : "") + '</p>';
+  } else {
+    zona.innerHTML = '<button class="btn-buzz" id="btn-buzz">¡YO SÉ!</button>';
+    $("btn-buzz").addEventListener("click", () => {
+      socket.emit("buzz");
+      const b = $("btn-buzz");
+      if(b){ b.disabled = true; b.textContent = "📣"; }
+      if(navigator.vibrate) navigator.vibrate([60,40,60]);
+    });
+  }
+}
+
+/* ---- final ---- */
+function renderFinal(esHost){
+  const rk = est.ranking || [];
+  $("f-titulo").innerHTML = "¡Tenemos<br><span>" + (est.modo === "equipos" ? "equipo campeón" : "campeones") + "!</span>";
+  $("f-lista").innerHTML = rk.map((x, i) =>
+    '<div class="fila-final' + (i === 0 ? ' campeon' : '') + '" style="animation-delay:' + (i*.15) + 's">' +
+    '<span class="pos">' + (i+1) + 'º</span><span class="nom">' + (i === 0 ? "🏆 " : "") + esc(x.n) +
+    (rol === "jugador" && x.n === miNombre ? " (tú)" : "") + '</span><span class="total">' + x.p + '</span></div>'
+  ).join("");
+  $("btn-reiniciar").style.display = esHost ? "block" : "none";
+  ver("p-final");
+}
+</script>
+</body>
+</html>
